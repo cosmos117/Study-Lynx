@@ -1,0 +1,99 @@
+/* Night Lynx layout C: grids, utilities, auth, landing, spinner, responsive. */
+
+.lynx-row-between { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.lynx-hero { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 2.25rem; }
+.lynx-grid-3 { display: grid; gap: 1rem; }
+.lynx-exams-grid { display: grid; gap: 1.5rem; }
+.lynx-details-grid { display: grid; gap: 1.5rem; margin-top: 1.5rem; }
+.lynx-stack { display: grid; gap: 0.75rem; margin-top: 1rem; }
+.lynx-stack-tight { display: grid; gap: 1.5rem; }
+.lynx-list { list-style: none; margin: 1rem 0 0; padding: 0; display: grid; gap: 0.75rem; }
+.lynx-caption { font-size: 0.78rem; }
+.lynx-stat-card { min-height: 7.5rem; }
+.lynx-stat-label { font-size: 0.85rem; font-weight: 600; margin: 0; }
+.lynx-exam-link { padding: 1rem; }
+.lynx-card-title { margin: 0; font-size: 1rem; font-weight: 700; color: var(--lynx-text); }
+.lynx-card-meta { margin-top: 0.9rem; }
+.lynx-primary-pill { color: var(--lynx-primary); }
+.lynx-detail-hero { margin-bottom: 0; }
+.lynx-study-header { margin-bottom: 1.5rem; }
+.lynx-study-card { min-height: 20rem; }
+.lynx-button-spaced { margin-left: 0.5rem; }
+.lynx-inline-form { display: flex; gap: 0.5rem; margin-top: 1rem; }
+.lynx-topic-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.6rem; border-radius: var(--lynx-radius-md); box-shadow: none; }
+
+.lynx-center { display: flex; align-items: center; justify-content: center; padding: 3rem 0; }
+.lynx-spinner { width: 2rem; height: 2rem; border-radius: 999px; border: 3px solid var(--lynx-border); border-top-color: var(--lynx-primary); animation: lynx-spin 0.9s linear infinite; }
+@keyframes lynx-spin { to { transform: rotate(360deg); } }
+
+.lynx-section-head { margin-bottom: 1.25rem; }
+.lynx-section-gap { margin-top: 1.25rem; }
+.lynx-icon-box { display: grid; place-items: center; width: 1.25rem; height: 1.25rem; font-size: 0.9rem; }
+
+/* Auth: brand panel on wide screens, form always */
+.lynx-auth-page { min-height: 100vh; display: grid; }
+.lynx-auth-aside { display: none; }
+.lynx-auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem 1rem; }
+.lynx-auth-card { width: 100%; max-width: 27rem; padding: 2rem; }
+.lynx-auth-brand { display: flex; align-items: center; gap: 0.7rem; font-size: 1rem; font-weight: 700; margin-bottom: 1.75rem; }
+.lynx-auth-sub { margin: 0.5rem 0 1.5rem; font-size: 0.92rem; color: var(--lynx-muted); }
+.lynx-auth-foot { text-align: center; font-size: 0.85rem; color: var(--lynx-muted); margin: 0; }
+.lynx-auth-foot a { font-weight: 600; text-decoration: none; }
+.lynx-auth-foot a:hover { text-decoration: underline; }
+.lynx-auth-card .lynx-h1 { font-size: 1.6rem; }
+.lynx-auth-pitch { text-wrap: balance; margin: 0; max-width: 24rem; font-size: clamp(1.75rem, 2.4vw, 2.3rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+.lynx-auth-points { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: 0.85rem; max-width: 24rem; color: rgba(255, 255, 255, 0.82); }
+.lynx-auth-points li { position: relative; padding-left: 1.9rem; line-height: 1.45; }
+.lynx-auth-points li::before { content: "✓"; position: absolute; left: 0; top: 0.05rem; display: grid; place-items: center; width: 1.3rem; height: 1.3rem; border-radius: 999px; background: rgba(255, 255, 255, 0.16); color: #fff; font-size: 0.72rem; font-weight: 700; }
+
+/* Landing */
+.lynx-landing-hero { text-align: center; padding: 4.5rem 1rem 3.5rem; }
+.lynx-landing-title { max-width: 46rem; margin: 1rem auto 0; font-size: clamp(2.3rem, 5.5vw, 3.75rem); letter-spacing: -0.03em; line-height: 1.08; }
+.lynx-gradient-text { background: linear-gradient(90deg, #6366F1, #8B5CF6 55%, #F59E0B); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lynx-landing-lead { text-wrap: pretty; max-width: 38rem; margin: 1.25rem auto 0; font-size: 1.08rem; line-height: 1.6; }
+.lynx-landing-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.75rem; margin-top: 2rem; }
+.lynx-landing-pills { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 2rem; }
+.lynx-landing-section { max-width: 72rem; margin: 0 auto; padding: 3rem 1rem; }
+.lynx-landing-heading { text-align: center; margin-bottom: 2.25rem; }
+.lynx-landing-heading .lynx-h1 { font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.1rem); margin-top: 0.6rem; }
+.lynx-feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; }
+.lynx-feature { padding: 1.5rem; }
+.lynx-feature-icon { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; margin-bottom: 1rem; border-radius: var(--lynx-radius-md); background: var(--lynx-primary-soft); color: var(--lynx-primary); }
+.lynx-feature h3 { margin: 0; font-size: 1.05rem; font-weight: 700; }
+.lynx-feature p { margin: 0.5rem 0 0; font-size: 0.92rem; line-height: 1.55; }
+.lynx-steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.lynx-step { counter-increment: step; padding: 1.25rem; border: 1px solid var(--lynx-border); border-radius: var(--lynx-radius); background: var(--lynx-surface); }
+.lynx-step::before { content: counter(step); display: grid; place-items: center; width: 1.9rem; height: 1.9rem; margin-bottom: 0.75rem; border-radius: 999px; background: var(--lynx-primary); color: #fff; font-size: 0.85rem; font-weight: 700; }
+.dark .lynx-step::before { color: #0A0F1E; }
+.lynx-step strong { display: block; font-size: 1rem; }
+.lynx-step span { display: block; margin-top: 0.3rem; font-size: 0.88rem; color: var(--lynx-muted); line-height: 1.5; }
+.lynx-cta { max-width: 46rem; margin: 0 auto; padding: 2.75rem 1.5rem; text-align: center; background: linear-gradient(135deg, var(--lynx-primary-soft), transparent 70%), var(--lynx-surface); }
+.lynx-cta p { margin: 0.75rem 0 1.5rem; }
+.lynx-footer-note { margin: 0; }
+.lynx-landing-footer { border-top: 1px solid var(--lynx-border); padding: 1.5rem 1rem; }
+.lynx-landing-footer-inner { max-width: 72rem; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+
+@media (min-width: 640px) {
+  .lynx-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lynx-grid-3 { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 960px) {
+  .lynx-auth-page { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .lynx-auth-aside { display: flex; flex-direction: column; justify-content: space-between; gap: 3rem; padding: 2.5rem 3.5rem; color: #fff; background: radial-gradient(40rem 24rem at 0% 0%, rgba(165, 171, 255, 0.35), transparent 60%), linear-gradient(150deg, #4338CA, #312E81 60%, #1E1B4B); }
+  .lynx-auth-aside .lynx-logo-link { color: #fff; }
+  .lynx-auth-legal { margin: 0; font-size: 0.8rem; color: rgba(255, 255, 255, 0.6); }
+}
+@media (min-width: 1024px) {
+  .lynx-sidebar { display: block; position: sticky; top: 4rem; align-self: flex-start; height: calc(100vh - 4rem); overflow-y: auto; }
+  .lynx-main { padding: 2.5rem 2.5rem 4rem; }
+  .lynx-header-inner { padding: 0 2rem; }
+  .lynx-exams-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+  .lynx-details-grid { grid-template-columns: minmax(0, 360px) minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .lynx-header-inner { padding: 0 1rem; }
+  .lynx-main { padding: 1.25rem 1rem 3rem; }
+  .lynx-inline-form { flex-wrap: wrap; }
+  .lynx-inline-form .lynx-grow { flex-basis: 100%; }
+  .lynx-landing-hero { padding-top: 3rem; }
+}

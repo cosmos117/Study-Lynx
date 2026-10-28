@@ -1,0 +1,19 @@
+node_modules/
+dist/
+coverage/
+
+.env
+.env.*
+!.env.example
+
+*.log
+.DS_Store
+Thumbs.db
+
+prisma/*.db
+prisma/*.db-journal
+
+# Local-only files
+abc.exe
+.vscode/
+backend/uploads/

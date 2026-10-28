@@ -1,0 +1,330 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum TopicDifficulty {
+  WEAK
+  AVERAGE
+  STRONG
+}
+
+enum StudySessionStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+}
+
+enum StudyTechnique {
+  POMODORO
+  DEEP_FOCUS
+  CUSTOM
+}
+
+enum AiContentType {
+  NOTES
+  FLASHCARDS
+  QUIZ
+  MINDMAP
+}
+
+enum AiContentStatus {
+  GENERATING
+  READY
+  FAILED
+}
+
+enum RecallRating {
+  AGAIN
+  HARD
+  GOOD
+  EASY
+}
+
+enum ContentSource {
+  AI
+  USER
+}
+
+enum LearningResourceType {
+  YOUTUBE
+  PDF
+  NOTE
+  WEB
+  BOOK
+}
+
+enum DocumentType {
+  PDF
+  NOTE
+  YOUTUBE
+}
+
+enum DocumentStatus {
+  UPLOADING
+  PROCESSING
+  READY
+  FAILED
+}
+
+model User {
+  id                Int                @id @default(autoincrement())
+  name              String
+  email             String             @unique
+  password          String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  exams             Exam[]
+  studySessions     StudySession[]
+  quizResults       QuizResult[]
+  aiContents        AiContent[]
+  aiUsages          AiUsage[]
+  notes             Note[]
+  flashcards        Flashcard[]
+  cardReviews       CardReview[]
+  recallReviews     RecallReview[]
+  learningResources LearningResource[]
+  documents         Document[]
+  documentChunks    DocumentChunk[]
+}
+
+model Exam {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  name            String
+  examDate        DateTime
+  dailyStudyHours Float
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjects        Subject[]
+
+  @@index([userId])
+}
+
+model Subject {
+  id        Int      @id @default(autoincrement())
+  examId    Int
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  exam      Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  topics    Topic[]
+
+  @@index([examId])
+}
+
+model Topic {
+  id                Int                @id @default(autoincrement())
+  subjectId         Int
+  name              String
+  difficulty        TopicDifficulty    @default(AVERAGE)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  subject           Subject            @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  studySessions     StudySession[]
+  quizResults       QuizResult[]
+  aiContents        AiContent[]
+  notes             Note[]
+  flashcards        Flashcard[]
+  recallReviews     RecallReview[]
+  learningResources LearningResource[]
+  documents         Document[]
+
+  @@index([subjectId])
+}
+
+model StudySession {
+  id              Int                @id @default(autoincrement())
+  userId          Int
+  topicId         Int
+  date            DateTime
+  duration        Int
+  startTime       DateTime?
+  plannedDuration Int?
+  actualDuration  Int?
+  status          StudySessionStatus @default(PLANNED)
+  technique       StudyTechnique     @default(POMODORO)
+  completedAt     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic           Topic              @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([topicId])
+}
+
+model QuizResult {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  topicId        Int
+  score          Int
+  totalQuestions Int
+  answers        Json?
+  attemptedAt    DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic          Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([topicId])
+}
+
+model AiContent {
+  id            Int             @id @default(autoincrement())
+  userId        Int
+  topicId       Int
+  type          AiContentType
+  status        AiContentStatus @default(GENERATING)
+  content       Json?
+  promptVersion String
+  provider      String?
+  model         String?
+  lockedAt      DateTime?
+  errorCode     String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic         Topic           @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicId, type])
+  @@index([userId, topicId])
+}
+
+model AiUsage {
+  id      Int      @id @default(autoincrement())
+  userId  Int?
+  date    DateTime
+  feature String
+  count   Int      @default(0)
+  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date, feature])
+}
+
+model Note {
+  id        Int           @id @default(autoincrement())
+  userId    Int
+  topicId   Int
+  content   String        @db.Text
+  source    ContentSource
+  updatedAt DateTime      @updatedAt
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic     Topic         @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, topicId])
+}
+
+model Flashcard {
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  topicId       Int
+  question      String         @db.Text
+  answer        String         @db.Text
+  source        ContentSource
+  createdAt     DateTime       @default(now())
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic         Topic          @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  review        CardReview?
+  recallReviews RecallReview[]
+
+  @@index([userId, topicId])
+}
+
+model CardReview {
+  id             Int       @id @default(autoincrement())
+  flashcardId    Int       @unique
+  userId         Int
+  easeFactor     Float     @default(2.5)
+  intervalDays   Int       @default(0)
+  repetitions    Int       @default(0)
+  lapses         Int       @default(0)
+  dueAt          DateTime
+  lastReviewedAt DateTime?
+  flashcard      Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dueAt])
+}
+
+model RecallReview {
+  id          Int          @id @default(autoincrement())
+  userId      Int
+  flashcardId Int
+  rating      RecallRating
+  reviewedAt  DateTime     @default(now())
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcard   Flashcard    @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+  topic       Topic?       @relation(fields: [topicId], references: [id])
+  topicId     Int?
+
+  @@index([userId, reviewedAt])
+  @@index([flashcardId, reviewedAt])
+}
+
+model LearningResource {
+  id             Int                  @id @default(autoincrement())
+  userId         Int
+  topicId        Int
+  type           LearningResourceType
+  title          String
+  url            String               @db.Text
+  youtubeVideoId String?
+  transcript     String?              @db.Text
+  metadata       Json?
+  startedAt      DateTime?
+  watchedPercent Int                  @default(0)
+  completedAt    DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic          Topic                @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@index([userId, topicId])
+  @@index([userId, type])
+}
+
+model Document {
+  id           Int             @id @default(autoincrement())
+  userId       Int
+  topicId      Int?
+  name         String
+  type         DocumentType
+  status       DocumentStatus  @default(UPLOADING)
+  sourceUrl    String          @db.LongText
+  mimeType     String?
+  sizeBytes    Int?
+  pageCount    Int?
+  errorMessage String?         @db.LongText
+  processedAt  DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic        Topic?          @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  chunks       DocumentChunk[]
+
+  @@index([userId])
+  @@index([userId, topicId])
+  @@index([userId, status])
+}
+
+model DocumentChunk {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  documentId Int
+  chunkIndex Int
+  content    String   @db.LongText
+  metadata   Json?
+  embedding  Json?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@index([userId, documentId])
+}
