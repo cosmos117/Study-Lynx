@@ -1,48 +1,37 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Alert from '../components/Alert.jsx';
 import Card from '../components/Card.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
-import MasteryMeter from '../components/MasteryMeter.jsx';
+import MiniCalendar from '../components/MiniCalendar.jsx';
 import PageHeader from '../components/PageHeader.jsx';
-import ProgressBar from '../components/ProgressBar.jsx';
 import SectionHeader from '../components/SectionHeader.jsx';
-import StatCard from '../components/StatCard.jsx';
-import StudySessionCard from '../components/StudySessionCard.jsx';
+import StreakBadge from '../components/StreakBadge.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import useStartSession from '../hooks/useStartSession.js';
 import usePageTitle from '../hooks/usePageTitle.js';
-import { hubAPI, insightsAPI, motivationAPI, studySessionAPI } from '../services/api.js';
-import { formatMinutes, todayKey } from '../utils/format.js';
+import { insightsAPI, motivationAPI, subjectAPI } from '../services/api.js';
+import { formatMinutes } from '../utils/format.js';
+import { errorMessage } from '../utils/aiErrors.js';
 
-function ReasonList({ reasons }) {
-  return (
-    <ul className="lynx-reasons" aria-label="Why this topic">
-      {reasons.map((reason) => <li key={reason} className="lynx-pill">{reason}</li>)}
-    </ul>
-  );
-}
+const CONTINUE_LIMIT = 6;
 
 export default function Dashboard() {
-  usePageTitle('Dashboard');
+  usePageTitle('Home');
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const startSession = useStartSession('/dashboard');
   const [overview, setOverview] = useState(null);
-  const [sessions, setSessions] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [motivation, setMotivation] = useState('');
   const [error, setError] = useState('');
-  const [starting, setStarting] = useState(false);
 
   const load = useCallback(async () => {
     setError('');
     try {
-      const [overviewResponse, sessionResponse] = await Promise.all([insightsAPI.overview(), studySessionAPI.today(todayKey())]);
+      const [overviewResponse, subjectResponse] = await Promise.all([insightsAPI.overview(), subjectAPI.list()]);
       setOverview(overviewResponse.data.data);
-      setSessions(sessionResponse.data.data.sessions);
+      setSubjects(subjectResponse.data.data.subjects);
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Unable to load your dashboard');
+      setError(errorMessage(requestError, 'Unable to load your home page'));
     }
   }, []);
 
@@ -51,118 +40,66 @@ export default function Dashboard() {
     motivationAPI.today().then((response) => setMotivation(response.data.data.motivation)).catch(() => {});
   }, [load]);
 
-  const studyNow = async (topic) => {
-    setStarting(true);
-    try {
-      const { data } = await hubAPI.studyNow(topic.id);
-      navigate(`/study-session/${data.data.session.id}`, { state: { returnTo: `/topics/${topic.id}?tab=Recall` } });
-    } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Unable to start a study session');
-      setStarting(false);
-    }
-  };
-
   if (error && !overview) return <Alert onRetry={load}>{error}</Alert>;
   if (!overview) return <LoadingSpinner />;
 
   const { topics, today, nextExam, streakDays } = overview;
-  const [focus, ...others] = topics;
   const totalDue = topics.reduce((sum, topic) => sum + topic.cardsDue, 0);
-  const scored = topics.filter((topic) => topic.mastery.score !== null);
-  const averageMastery = scored.length ? Math.round(scored.reduce((sum, topic) => sum + topic.mastery.score, 0) / scored.length) : null;
-  const todayDone = today.goalMinutes ? Math.min(100, Math.round((today.studyMinutes / today.goalMinutes) * 100)) : null;
-  const openSessions = sessions.filter((session) => session.status === 'PLANNED' || session.status === 'IN_PROGRESS');
+  const examEvents = subjects.filter((subject) => subject.examDate).map((subject) => ({ date: subject.examDate, label: `${subject.name} exam` }));
 
   return (
     <div>
+      {motivation && <blockquote className="lynx-quote">&ldquo;{motivation}&rdquo;</blockquote>}
       <PageHeader
-        eyebrow="Your workspace"
+        eyebrow="Home"
         title={`Welcome back, ${user.name}`}
         description={nextExam
-          ? `${nextExam.name} is ${nextExam.daysLeft <= 0 ? 'today' : `in ${nextExam.daysLeft} day${nextExam.daysLeft === 1 ? '' : 's'}`}. ${motivation}`
-          : motivation || 'Add an exam to get a study plan that fits your deadline.'}
-        actions={totalDue > 0 && <Link to="/recall" className="lynx-btn lynx-btn-ghost">Review {totalDue} due card{totalDue === 1 ? '' : 's'}</Link>}
+          ? `${nextExam.name} exam ${nextExam.daysLeft <= 0 ? 'is today' : `in ${nextExam.daysLeft} day${nextExam.daysLeft === 1 ? '' : 's'}`}.`
+          : 'Pick a topic, start a focus block, and study one step at a time.'}
+        aside={<><StreakBadge days={streakDays} /><MiniCalendar events={examEvents} /></>}
       />
       <Alert className="lynx-section-gap" onRetry={load}>{error}</Alert>
 
-      {!focus ? (
+      {!topics.length ? (
         <Card>
           <EmptyState
             title="Let's set up your first topic"
-            description="Add an exam, then the subjects and topics you need to learn. Study Lynx will tell you what to study first, and why."
-            action={<Link to="/subjects" className="lynx-btn lynx-btn-primary">Add an exam</Link>}
+            description="Add a subject and the topics you need to learn. Each topic gets its own sources, AI help, flashcards and quiz."
+            action={<Link to="/subjects" className="lynx-btn lynx-btn-primary">Add a subject</Link>}
           />
         </Card>
       ) : (
         <>
-          <section aria-labelledby="study-next">
-            <SectionHeader title="Study this next" description="Chosen from your due cards, exam dates and how well you know each topic." />
-            <Card className="lynx-priority">
-              <div className="lynx-row-between">
-                <div>
-                  <h3 id="study-next" className="lynx-h2">{focus.name}</h3>
-                  <p className="lynx-muted lynx-caption">{focus.subject.name} · {focus.exam.name}</p>
-                </div>
-                <span className="lynx-priority-rank" aria-hidden="true">1</span>
-              </div>
-              <ReasonList reasons={focus.priority.reasons} />
-              <MasteryMeter mastery={focus.mastery} label="How well you know it" />
-              <div className="lynx-hub-actions">
-                <button type="button" disabled={starting} onClick={() => studyNow(focus)} className="lynx-btn lynx-btn-primary">{starting ? 'Starting…' : 'Study now'}</button>
-                <Link to={`/topics/${focus.id}`} className="lynx-btn lynx-btn-ghost">Open topic hub</Link>
-                {focus.cardsDue > 0 && <Link to={`/recall/review?topicId=${focus.id}`} className="lynx-btn lynx-btn-ghost">Review {focus.cardsDue} due</Link>}
-              </div>
+          <div className="lynx-grid-3 lynx-grid-2">
+            <Card className="lynx-home-card">
+              <p className="lynx-eyebrow">Flashcards due</p>
+              <p className="lynx-home-number">{totalDue}</p>
+              <p className="lynx-muted lynx-caption">{totalDue ? 'Review them now while they are fresh.' : 'You are all caught up.'}</p>
+              {totalDue > 0 && <Link to="/recall/review" className="lynx-btn lynx-btn-primary lynx-btn-sm">Review now</Link>}
             </Card>
-            {others.length > 0 && (
-              <div className="lynx-stack">
-                {others.slice(0, 3).map((topic, index) => (
-                  <Card key={topic.id} className="lynx-priority">
-                    <div className="lynx-row-between">
-                      <div>
-                        <h3 className="lynx-h3"><Link to={`/topics/${topic.id}`} className="lynx-text-link lynx-plain-link">{topic.name}</Link></h3>
-                        <p className="lynx-muted lynx-caption">{topic.subject.name} · {topic.priority.reasons.join(' · ')}</p>
-                      </div>
-                      <span className="lynx-priority-rank" aria-hidden="true">{index + 2}</span>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <div className="lynx-grid-3 lynx-section-gap">
-            <StatCard label="Study streak" value={`${streakDays} day${streakDays === 1 ? '' : 's'}`} detail={streakDays ? 'Days in a row with study or recall' : 'Study or review a card to start one'} tone="amber" icon="↻" />
-            <StatCard label="Cards due" value={totalDue} detail={totalDue ? 'Review them while they are fresh' : 'You are all caught up'} icon="◷" />
-            <StatCard label="Average mastery" value={averageMastery === null ? '—' : `${averageMastery}%`} detail={averageMastery === null ? 'Review cards or take a quiz to see it' : `Across ${scored.length} topic${scored.length === 1 ? '' : 's'}`} tone="success" icon="✓" />
+            <Card className="lynx-home-card">
+              <p className="lynx-eyebrow">Focused today</p>
+              <p className="lynx-home-number">{formatMinutes(today.studyMinutes)}</p>
+              <p className="lynx-muted lynx-caption">{today.sessionsDone} focus block{today.sessionsDone === 1 ? '' : 's'} completed. Start one from a topic or the ▶ Focus button.</p>
+            </Card>
           </div>
+
+          <section className="lynx-section-gap" aria-labelledby="continue">
+            <SectionHeader title="Continue studying" description="Topics with cards due come first." />
+            <div className="lynx-continue-grid" id="continue">
+              {topics.slice(0, CONTINUE_LIMIT).map((topic) => (
+                <Link key={topic.id} to={`/topics/${topic.id}`} className="lynx-card lynx-card-hover lynx-continue-card">
+                  <span className="lynx-muted lynx-caption">{topic.subject.name}</span>
+                  <strong>{topic.name}</strong>
+                  <span className="lynx-muted lynx-caption">
+                    {topic.cardsDue ? `${topic.cardsDue} card${topic.cardsDue === 1 ? '' : 's'} due` : topic.cardsTotal ? `${topic.cardsTotal} flashcards` : 'Not started'}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
         </>
       )}
-
-      <div className="lynx-dashboard-grid lynx-section-gap">
-        <section aria-labelledby="today-goal">
-          <SectionHeader title="Today" description="Time studied against your daily goal." />
-          <Card className="lynx-priority">
-            <h3 id="today-goal" className="lynx-h3">{formatMinutes(today.studyMinutes)} studied</h3>
-            {todayDone !== null
-              ? <ProgressBar value={todayDone} label={`Goal: ${formatMinutes(today.goalMinutes)} a day for ${nextExam.name}`} />
-              : <p className="lynx-muted lynx-caption">Add an exam to set a daily goal.</p>}
-            <p className="lynx-muted lynx-caption">{today.sessionsDone} session{today.sessionsDone === 1 ? '' : 's'} completed today</p>
-          </Card>
-        </section>
-        <section aria-labelledby="planned">
-          <SectionHeader title="Planned for today" description="Sessions from My Plan." />
-          <div className="lynx-stack" id="planned">
-            {openSessions.slice(0, 3).map((session) => (
-              <StudySessionCard key={session.id} session={session} planned onStart={startSession} />
-            ))}
-            {!openSessions.length && (
-              <Card>
-                <EmptyState title="Nothing planned for today" description="Plan a session to turn your intentions into a routine." action={<Link to="/plan" className="lynx-btn lynx-btn-ghost lynx-btn-sm">Open My Plan</Link>} />
-              </Card>
-            )}
-          </div>
-        </section>
-      </div>
     </div>
   );
 }

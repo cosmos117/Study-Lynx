@@ -9,14 +9,16 @@ function requireJwtSecret() {
   return env.jwtSecret;
 }
 
+const ALGORITHM = 'HS256';
+
 export function createToken(userId) {
   return jwt.sign(
     { sub: String(userId) },
     requireJwtSecret(),
-    { expiresIn: env.jwtExpiresIn },
+    { algorithm: ALGORITHM, expiresIn: env.jwtExpiresIn },
   );
 }
 
 export function verifyToken(token) {
-  return jwt.verify(token, requireJwtSecret());
+  return jwt.verify(token, requireJwtSecret(), { algorithms: [ALGORITHM] });
 }

@@ -16,6 +16,7 @@ api.interceptors.request.use((config) => {
 export const authAPI = {
   register: (payload) => api.post('/auth/register', payload),
   login: (payload) => api.post('/auth/login', payload),
+  google: (credential) => api.post('/auth/google', { credential }),
   me: () => api.get('/auth/me'),
 };
 
@@ -29,16 +30,13 @@ export const motivationAPI = {
 
 export const notesAPI = {
   get: (topicId) => api.get(`/topics/${topicId}/notes`),
-  generate: (topicId, payload = {}) => api.post(`/topics/${topicId}/notes/generate`, payload),
   save: (topicId, payload) => api.put(`/topics/${topicId}/notes`, payload),
 };
 
 export const flashcardAPI = {
+  dueCount: () => api.get('/flashcards/due/count'),
   list: (topicId) => api.get(`/topics/${topicId}/flashcards`),
   generate: (topicId, payload = {}) => api.post(`/topics/${topicId}/flashcards/generate`, payload),
-  create: (topicId, payload) => api.post(`/topics/${topicId}/flashcards`, payload),
-  update: (id, payload) => api.put(`/flashcards/${id}`, payload),
-  remove: (id) => api.delete(`/flashcards/${id}`),
   review: (id, payload) => api.post(`/flashcards/${id}/review`, payload),
 };
 
@@ -50,6 +48,7 @@ export const quizAPI = {
   get: (topicId) => api.get(`/topics/${topicId}/quiz`),
   generate: (topicId, payload = {}) => api.post(`/topics/${topicId}/quiz/generate`, payload),
   submit: (topicId, payload) => api.post(`/topics/${topicId}/quiz/submit`, payload),
+  remove: (topicId) => api.delete(`/topics/${topicId}/quiz`),
 };
 
 export const mindmapAPI = {
@@ -57,40 +56,24 @@ export const mindmapAPI = {
   generate: (topicId, payload = {}) => api.post(`/topics/${topicId}/mindmap/generate`, payload),
 };
 
-export const examAPI = {
-  list: (params) => api.get('/exams', { params }),
-  create: (payload) => api.post('/exams', payload),
-  get: (id) => api.get(`/exams/${id}`),
-  update: (id, payload) => api.put(`/exams/${id}`, payload),
-  remove: (id) => api.delete(`/exams/${id}`),
-};
-
 export const subjectAPI = {
-  list: (examId, params) => api.get(`/exams/${examId}/subjects`, { params }),
-  create: (examId, payload) => api.post(`/exams/${examId}/subjects`, payload),
+  list: () => api.get('/subjects'),
+  create: (payload) => api.post('/subjects', payload),
   update: (id, payload) => api.put(`/subjects/${id}`, payload),
   remove: (id) => api.delete(`/subjects/${id}`),
 };
 
 export const topicAPI = {
-  list: (subjectId, params) => api.get(`/subjects/${subjectId}/topics`, { params }),
   create: (subjectId, payload) => api.post(`/subjects/${subjectId}/topics`, payload),
-  update: (id, payload) => api.put(`/topics/${id}`, payload),
   remove: (id) => api.delete(`/topics/${id}`),
 };
 
 export const studySessionAPI = {
-  today: (date) => api.get('/study-sessions/today', { params: date ? { date } : {} }),
-  create: (payload) => api.post('/study-sessions', payload),
-  generate: (payload) => api.post('/study-sessions/generate', payload),
-  update: (id, payload) => api.patch(`/study-sessions/${id}`, payload),
-  start: (id) => api.post(`/study-sessions/${id}/start`),
   complete: (id, payload = {}) => api.post(`/study-sessions/${id}/complete`, payload),
   skip: (id) => api.post(`/study-sessions/${id}/skip`),
 };
 
 export const resourceAPI = {
-  list: (topicId) => api.get('/resources', { params: topicId ? { topicId } : {} }),
   get: (id) => api.get(`/resources/${id}`),
   addYoutube: (payload) => api.post('/resources/youtube', payload),
   progress: (id, payload) => api.patch(`/resources/${id}/progress`, payload),
@@ -98,12 +81,8 @@ export const resourceAPI = {
 };
 
 export const documentAPI = {
-  list: (params = {}) => api.get('/documents', { params }),
-  get: (id) => api.get(`/documents/${id}`),
-  chunks: (id, params = {}) => api.get(`/documents/${id}/chunks`, { params }),
   upload: (formData) => api.post('/documents', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   createText: (payload) => api.post('/documents/text', payload),
-  attach: (id, topicId) => api.patch(`/documents/${id}/topic`, { topicId: topicId ? Number(topicId) : null }),
   remove: (id) => api.delete(`/documents/${id}`),
 };
 
@@ -114,7 +93,6 @@ export const hubAPI = {
 
 export const insightsAPI = {
   overview: () => api.get('/overview'),
-  analytics: (days) => api.get('/analytics', { params: { days } }),
 };
 
 export const tutorAPI = {

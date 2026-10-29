@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Study Lynx mark</title>
+  <!-- Open book whose page tops rise into lynx ears -->
+  <path d="M248 236 L248 408 Q162 394 76 362 L76 198 L112 104 L158 210 Z" fill="#4F46E5"/>
+  <path d="M264 236 L264 408 Q350 394 436 362 L436 198 L400 104 L354 210 Z" fill="#4F46E5"/>
+  <g stroke="#FFFFFF" stroke-width="13" stroke-linecap="round" opacity="0.5">
+    <line x1="112" y1="272" x2="212" y2="290"/>
+    <line x1="112" y1="316" x2="212" y2="334"/>
+    <line x1="400" y1="272" x2="300" y2="290"/>
+    <line x1="400" y1="316" x2="300" y2="334"/>
+  </g>
+  <path d="M256 224 L256 414" stroke="#F59E0B" stroke-width="22" stroke-linecap="round"/>
+</svg>

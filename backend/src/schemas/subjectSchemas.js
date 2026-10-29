@@ -1,19 +1,17 @@
 import { z } from 'zod';
 
-const subjectBodySchema = z.object({
+// Optional exam date: a valid date, or null to clear it.
+const examDateSchema = z.coerce.date().refine((date) => !Number.isNaN(date.getTime()), 'A valid exam date is required');
+
+export const createSubjectSchema = z.object({
   name: z.string().trim().min(1).max(150),
+  examDate: examDateSchema.nullable().optional(),
 });
 
-export const createSubjectSchema = subjectBodySchema;
-
-export const updateSubjectSchema = subjectBodySchema.refine(
+export const updateSubjectSchema = createSubjectSchema.partial().refine(
   (data) => Object.keys(data).length > 0,
   'At least one field is required',
 );
-
-export const examIdSchema = z.object({
-  examId: z.coerce.number().int().positive(),
-});
 
 export const subjectIdSchema = z.object({
   id: z.coerce.number().int().positive(),

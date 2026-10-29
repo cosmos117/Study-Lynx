@@ -9,12 +9,13 @@ import StatCard from '../components/StatCard.jsx';
 import Alert from '../components/Alert.jsx';
 import usePageTitle from '../hooks/usePageTitle.js';
 import { recallAPI } from '../services/api.js';
+import { errorMessage } from '../utils/aiErrors.js';
 
 export default function Recall() {
   usePageTitle('Active Recall');
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState('');
-  const load = () => { setError(''); recallAPI.summary().then(({ data }) => setSummary(data.data)).catch((requestError) => setError(requestError.response?.data?.message || 'Unable to load recall dashboard')); };
+  const load = () => { setError(''); recallAPI.summary().then(({ data }) => setSummary(data.data)).catch((requestError) => setError(errorMessage(requestError, 'Unable to load recall dashboard'))); };
   useEffect(load, []);
   if (error) return <Alert onRetry={load}>{error}</Alert>;
   if (!summary) return <LoadingSpinner />;

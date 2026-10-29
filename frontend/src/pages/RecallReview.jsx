@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import StatCard from '../components/StatCard.jsx';
 import usePageTitle from '../hooks/usePageTitle.js';
 import { flashcardAPI, recallAPI } from '../services/api.js';
+import { errorMessage } from '../utils/aiErrors.js';
 
 const RATINGS = ['AGAIN', 'HARD', 'GOOD', 'EASY'];
 const LABELS = { AGAIN: 'Again', HARD: 'Hard', GOOD: 'Good', EASY: 'Easy' };
@@ -34,8 +35,8 @@ function ReviewComplete({ results, topicId }) {
           </ul>
         </div>
         <div className="lynx-hub-actions lynx-section-gap">
-          {topicId && <Link to={`/topics/${topicId}?tab=Practice`} className="lynx-btn lynx-btn-primary">Test yourself with a quiz</Link>}
-          {topicId && <Link to={`/topics/${topicId}?tab=Progress`} className="lynx-btn lynx-btn-ghost">See your progress</Link>}
+          {topicId && <Link to={`/topics/${topicId}?tab=quiz`} className="lynx-btn lynx-btn-primary">Test yourself with a quiz</Link>}
+          {topicId && <Link to={`/topics/${topicId}`} className="lynx-btn lynx-btn-ghost">Back to topic</Link>}
           <Link to="/recall" className="lynx-btn lynx-btn-ghost">Back to Active Recall</Link>
         </div>
       </Card>
@@ -61,7 +62,7 @@ export default function RecallReview() {
         const due = [...data.data.overdue, ...data.data.dueToday];
         setCards(topicId ? due.filter((card) => String(card.flashcard.topic.id) === topicId) : due);
       })
-      .catch((requestError) => setError(requestError.response?.data?.message || 'Unable to load review cards'));
+      .catch((requestError) => setError(errorMessage(requestError, 'Unable to load review cards')));
   }, [topicId]);
   useEffect(load, [load]);
 
@@ -76,7 +77,7 @@ export default function RecallReview() {
       setRevealed(false);
       setCurrent((value) => value + 1);
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Unable to save that rating');
+      setError(errorMessage(requestError, 'Unable to save that rating'));
     } finally {
       saving.current = false;
     }
@@ -107,7 +108,7 @@ export default function RecallReview() {
   return (
     <div className="lynx-recall-review">
       <div className="lynx-focus-top">
-        <Link to={topicId ? `/topics/${topicId}?tab=Recall` : '/recall'} className="lynx-logo-link">← Back</Link>
+        <Link to={topicId ? `/topics/${topicId}?tab=flashcards` : '/recall'} className="lynx-logo-link">← Back</Link>
         <span className="lynx-pill">{current + 1} / {cards.length}</span>
       </div>
       <Alert>{error}</Alert>

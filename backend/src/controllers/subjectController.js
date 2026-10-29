@@ -6,29 +6,17 @@ import {
 } from '../services/subjectService.js';
 
 export async function create(request, response) {
-  const subject = await createSubject(
-    request.user.id,
-    request.params.examId,
-    request.body,
-  );
+  const subject = await createSubject(request.user.id, request.body);
   response.status(201).json({ success: true, data: { subject } });
 }
 
 export async function list(request, response) {
-  const data = await listSubjects(
-    request.user.id,
-    request.params.examId,
-    request.query,
-  );
-  response.json({ success: true, data });
+  const subjects = await listSubjects(request.user.id);
+  response.json({ success: true, data: { subjects } });
 }
 
 export async function update(request, response) {
-  const subject = await updateSubject(
-    request.user.id,
-    request.params.id,
-    request.body,
-  );
+  const subject = await updateSubject(request.user.id, request.params.id, request.body);
   response.json({ success: true, data: { subject } });
 }
 

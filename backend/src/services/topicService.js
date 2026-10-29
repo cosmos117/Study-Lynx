@@ -4,7 +4,7 @@ import { getPagination, paginatedResponse } from '../utils/pagination.js';
 
 async function findOwnedSubject(userId, subjectId) {
   const subject = await prisma.subject.findFirst({
-    where: { id: subjectId, exam: { userId } },
+    where: { id: subjectId, userId },
     select: { id: true },
   });
 
@@ -17,7 +17,7 @@ async function findOwnedSubject(userId, subjectId) {
 
 async function findOwnedTopic(userId, topicId) {
   const topic = await prisma.topic.findFirst({
-    where: { id: topicId, subject: { exam: { userId } } },
+    where: { id: topicId, subject: { userId } },
     include: {
       _count: { select: { studySessions: true, quizResults: true } },
     },

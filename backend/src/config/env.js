@@ -23,6 +23,7 @@ export const env = {
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   databaseUrl: process.env.DATABASE_URL || '',
   jwtSecret: process.env.JWT_SECRET || '',
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   ai: {
     provider: process.env.AI_PROVIDER || 'gemini',
@@ -35,7 +36,7 @@ export const env = {
     timeoutMs: readNumber('AI_TIMEOUT_MS', 30000, { integer: true, min: 1 }),
     maxRetries: readNumber('AI_MAX_RETRIES', 3, { integer: true, min: 0 }),
     dailyLimit: readNumber('AI_DAILY_LIMIT', null, { integer: true, min: 1 }),
-    userDailyLimit: readNumber('AI_USER_DAILY_LIMIT', 15, { integer: true, min: 1 }),
+    userDailyLimit: readNumber('AI_USER_DAILY_LIMIT', 30, { integer: true, min: 1 }),
     lockTimeoutSeconds: readNumber('AI_LOCK_TIMEOUT_SECONDS', 90, { integer: true, min: 1 }),
     inputMaxChars: readNumber('AI_INPUT_MAX_CHARS', 12000, { integer: true, min: 1 }),
   },

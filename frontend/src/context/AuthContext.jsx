@@ -49,6 +49,11 @@ export function AuthProvider({ children }) {
     authenticate(data.data);
   };
 
+  const loginWithGoogle = async (credential) => {
+    const { data } = await authAPI.google(credential);
+    authenticate(data.data);
+  };
+
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
@@ -56,7 +61,7 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout }),
+    () => ({ user, loading, login, register, loginWithGoogle, logout }),
     [user, loading],
   );
 

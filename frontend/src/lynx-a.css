@@ -5,16 +5,13 @@
 /* Brand mark: the logo is already a rounded badge, so it is shown as-is. */
 .lynx-brand { display: inline-grid; place-items: center; flex-shrink: 0; }
 .lynx-brand-img { width: 100%; height: 100%; object-fit: contain; }
-.lynx-brand-fallback { width: 100%; height: 100%; place-items: center; border-radius: 28%; color: #fff; background: linear-gradient(135deg, #6366F1 20%, #4338CA 80%); }
+.lynx-brand-fallback { width: 100%; height: 100%; place-items: center; border-radius: 28%; color: #fff; background: var(--lynx-primary); }
 .lynx-brand-fallback svg { width: 62%; height: 62%; }
 
 /* Header */
 .lynx-header {
   position: sticky; top: 0; z-index: 20;
   background: var(--lynx-bg);
-  background: color-mix(in srgb, var(--lynx-bg) 82%, transparent);
-  -webkit-backdrop-filter: saturate(1.4) blur(12px);
-  backdrop-filter: saturate(1.4) blur(12px);
   border-bottom: 1px solid var(--lynx-border);
 }
 .lynx-header-inner { max-width: var(--lynx-max); margin: 0 auto; height: 4rem; display: flex; align-items: center; justify-content: space-between; padding: 0 1.25rem; gap: 1rem; }

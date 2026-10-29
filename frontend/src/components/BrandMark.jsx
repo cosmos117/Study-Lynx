@@ -1,13 +1,13 @@
 /**
  * Night Lynx brand mark.
- * Place your uploaded lynx image at: frontend/public/study-lynx-logo.svg
+ * Place your uploaded lynx image at: frontend/public/study-lynx-mark.svg
  * (also used as favicon). Falls back to an inline SVG eye-mark if missing.
  */
 export default function BrandMark({ size = 40 }) {
   return (
     <span className="lynx-brand" style={{ width: size, height: size }}>
       <img
-        src="/study-lynx-logo.svg"
+        src="/study-lynx-mark.svg"
         alt="Study Lynx logo"
         className="lynx-brand-img"
         onError={(event) => {

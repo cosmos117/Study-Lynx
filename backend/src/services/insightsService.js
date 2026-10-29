@@ -32,12 +32,12 @@ export function createInsightsService({ db = prisma } = {}) {
     const todayStart = startOfDay(now);
     const [topicRows, cardGroups, dueRows, reviews, quizResults, sessions, quizzes] = await Promise.all([
       db.topic.findMany({
-        where: { subject: { exam: { userId } } },
+        where: { subject: { userId } },
         select: {
           id: true,
           name: true,
           difficulty: true,
-          subject: { select: { id: true, name: true, exam: { select: { id: true, name: true, examDate: true, dailyStudyHours: true } } } },
+          subject: { select: { id: true, name: true, examDate: true } },
         },
       }),
       db.flashcard.groupBy({ by: ['topicId'], where: { userId }, _count: { _all: true } }),
@@ -79,8 +79,7 @@ export function createInsightsService({ db = prisma } = {}) {
         name: topic.name,
         difficulty: topic.difficulty,
         subject: { id: topic.subject.id, name: topic.subject.name },
-        exam: { id: topic.subject.exam.id, name: topic.subject.exam.name },
-        examDate: topic.subject.exam.examDate,
+        examDate: topic.subject.examDate,
         cardsTotal: cards.get(topic.id) || 0,
         cardsDue: (due.get(topic.id) || []).length,
         mastery: signals.mastery,
@@ -97,9 +96,10 @@ export function createInsightsService({ db = prisma } = {}) {
 
     const doneToday = sessions.filter((session) => session.status === 'COMPLETED' && session.completedAt && session.completedAt >= todayStart);
     const plannedToday = sessions.filter((session) => ['PLANNED', 'IN_PROGRESS'].includes(session.status) && startOfDay(session.date).getTime() === todayStart.getTime());
+    // The nearest upcoming exam across the subjects the student has topics in.
     const nextExam = topicRows
-      .map((topic) => topic.subject.exam)
-      .filter((exam) => exam.examDate >= todayStart)
+      .map((topic) => topic.subject)
+      .filter((subject) => subject.examDate && subject.examDate >= todayStart)
       .sort((a, b) => a.examDate - b.examDate)[0] || null;
 
     const activeDays = new Set([
@@ -110,7 +110,6 @@ export function createInsightsService({ db = prisma } = {}) {
     return {
       today: {
         studyMinutes: doneToday.reduce((sum, session) => sum + (session.actualDuration || session.plannedDuration || 0), 0),
-        goalMinutes: nextExam ? Math.round(nextExam.dailyStudyHours * 60) : null,
         sessionsDone: doneToday.length,
         sessionsPlanned: plannedToday.length,
       },

@@ -29,6 +29,3 @@ export async function skip(request, response) {
   response.json({ success: true, data: { session: await studySessions.skipSession(request.user.id, request.params.id) } });
 }
 
-export async function generate(request, response) {
-  response.status(201).json({ success: true, data: { sessions: await studySessions.generatePlan(request.user.id, request.body) } });
-}

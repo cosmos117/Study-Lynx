@@ -25,12 +25,14 @@ router.post('/topics/:topicId/flashcards/generate', ...topic, ...generate, async
 router.post('/topics/:topicId/flashcards', ...topic, validate(flashcardSchema), asyncHandler(flashcards.create));
 router.put('/flashcards/:id', validate(flashcardIdSchema, 'params'), validate(flashcardSchema), asyncHandler(flashcards.update));
 router.delete('/flashcards/:id', validate(flashcardIdSchema, 'params'), asyncHandler(flashcards.remove));
+router.get('/flashcards/due/count', asyncHandler(flashcards.dueCount));
 router.get('/flashcards/due', validate(dueQuerySchema, 'query'), asyncHandler(flashcards.due));
 router.post('/flashcards/:id/review', validate(flashcardIdSchema, 'params'), validate(reviewSchema), asyncHandler(flashcards.review));
 
 router.get('/topics/:topicId/quiz', ...topic, asyncHandler(quiz.get));
 router.post('/topics/:topicId/quiz/generate', ...topic, ...generate, asyncHandler(quiz.generate));
 router.post('/topics/:topicId/quiz/submit', ...topic, validate(quizSubmitSchema), asyncHandler(quiz.submit));
+router.delete('/topics/:topicId/quiz', ...topic, asyncHandler(quiz.remove));
 
 router.get('/topics/:topicId/mindmap', ...topic, asyncHandler(mindmap.get));
 router.post('/topics/:topicId/mindmap/generate', ...topic, ...generate, asyncHandler(mindmap.generate));

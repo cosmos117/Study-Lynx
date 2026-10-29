@@ -27,7 +27,12 @@
 @keyframes lynx-spin { to { transform: rotate(360deg); } }
 
 .lynx-section-head { margin-bottom: 1.25rem; }
+.lynx-quote { margin: 0 0 1.5rem; padding: 0.15rem 0 0.15rem 1rem; border-left: 2px solid var(--lynx-primary); color: var(--lynx-muted); font-size: 1.05rem; font-style: italic; line-height: 1.5; text-wrap: balance; }
 .lynx-section-gap { margin-top: 1.25rem; }
+.lynx-sidebar-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.lynx-sidebar-toggle { display: none; place-items: center; width: 2rem; height: 2rem; flex-shrink: 0; border: 0; border-radius: var(--lynx-radius-sm); background: none; color: var(--lynx-muted); cursor: pointer; }
+.lynx-sidebar-toggle:hover { background: var(--lynx-surface-2); color: var(--lynx-text); }
+.lynx-sidebar-toggle:focus-visible { outline: 2px solid var(--lynx-primary); outline-offset: 1px; }
 .lynx-icon-box { display: grid; place-items: center; width: 1.25rem; height: 1.25rem; font-size: 0.9rem; }
 
 /* Auth: brand panel on wide screens, form always */
@@ -37,55 +42,47 @@
 .lynx-auth-card { width: 100%; max-width: 27rem; padding: 2rem; }
 .lynx-auth-brand { display: flex; align-items: center; gap: 0.7rem; font-size: 1rem; font-weight: 700; margin-bottom: 1.75rem; }
 .lynx-auth-sub { margin: 0.5rem 0 1.5rem; font-size: 0.92rem; color: var(--lynx-muted); }
+.lynx-password { position: relative; display: block; }
+.lynx-password .lynx-input { padding-right: 2.75rem; }
+.lynx-password-toggle { position: absolute; top: 50%; right: 0.35rem; display: grid; place-items: center; width: 2rem; height: 2rem; transform: translateY(-50%); border: 0; border-radius: var(--lynx-radius-sm); background: none; color: var(--lynx-muted); cursor: pointer; }
+.lynx-password-toggle:hover { color: var(--lynx-text); }
+.lynx-password-toggle:focus-visible { outline: 2px solid var(--lynx-primary); outline-offset: 1px; }
+.lynx-google-btn { position: relative; width: 100%; max-width: 25rem; height: 40px; margin: 0 auto; }
+.lynx-google-face { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 0.7rem; border: 1px solid var(--lynx-border-strong); border-radius: var(--lynx-radius-md); background: #fff; color: #1f1f1f; font-size: 0.92rem; font-weight: 600; transition: background-color 0.15s ease, border-color 0.15s ease; pointer-events: none; }
+.lynx-google-btn:hover .lynx-google-face { background: #f4f5f7; border-color: var(--lynx-text); }
+.lynx-google-overlay { position: absolute; inset: 0; overflow: hidden; opacity: 0.01; cursor: pointer; }
+.lynx-google-overlay > div, .lynx-google-overlay iframe { width: 100% !important; }
+.lynx-auth-divider { display: flex; align-items: center; gap: 0.75rem; color: var(--lynx-muted); font-size: 0.8rem; }
+.lynx-auth-divider::before, .lynx-auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--lynx-border, currentColor); opacity: 0.3; }
 .lynx-auth-foot { text-align: center; font-size: 0.85rem; color: var(--lynx-muted); margin: 0; }
 .lynx-auth-foot a { font-weight: 600; text-decoration: none; }
 .lynx-auth-foot a:hover { text-decoration: underline; }
 .lynx-auth-card .lynx-h1 { font-size: 1.6rem; }
 .lynx-auth-pitch { text-wrap: balance; margin: 0; max-width: 24rem; font-size: clamp(1.75rem, 2.4vw, 2.3rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
-.lynx-auth-points { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: 0.85rem; max-width: 24rem; color: rgba(255, 255, 255, 0.82); }
+.lynx-auth-points { list-style: none; margin: 1.5rem 0 0; padding: 0; display: grid; gap: 0.85rem; max-width: 24rem; color: var(--lynx-muted); }
 .lynx-auth-points li { position: relative; padding-left: 1.9rem; line-height: 1.45; }
-.lynx-auth-points li::before { content: "✓"; position: absolute; left: 0; top: 0.05rem; display: grid; place-items: center; width: 1.3rem; height: 1.3rem; border-radius: 999px; background: rgba(255, 255, 255, 0.16); color: #fff; font-size: 0.72rem; font-weight: 700; }
+.lynx-auth-points li::before { content: "✓"; position: absolute; left: 0; top: 0.05rem; display: grid; place-items: center; width: 1.3rem; height: 1.3rem; border-radius: 999px; background: var(--lynx-primary-soft); color: var(--lynx-primary); font-size: 0.72rem; font-weight: 700; }
 
-/* Landing */
-.lynx-landing-hero { text-align: center; padding: 4.5rem 1rem 3.5rem; }
-.lynx-landing-title { max-width: 46rem; margin: 1rem auto 0; font-size: clamp(2.3rem, 5.5vw, 3.75rem); letter-spacing: -0.03em; line-height: 1.08; }
-.lynx-gradient-text { background: linear-gradient(90deg, #6366F1, #8B5CF6 55%, #F59E0B); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.lynx-landing-lead { text-wrap: pretty; max-width: 38rem; margin: 1.25rem auto 0; font-size: 1.08rem; line-height: 1.6; }
-.lynx-landing-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.75rem; margin-top: 2rem; }
-.lynx-landing-pills { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 2rem; }
-.lynx-landing-section { max-width: 72rem; margin: 0 auto; padding: 3rem 1rem; }
-.lynx-landing-heading { text-align: center; margin-bottom: 2.25rem; }
-.lynx-landing-heading .lynx-h1 { font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.1rem); margin-top: 0.6rem; }
-.lynx-feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; }
-.lynx-feature { padding: 1.5rem; }
-.lynx-feature-icon { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; margin-bottom: 1rem; border-radius: var(--lynx-radius-md); background: var(--lynx-primary-soft); color: var(--lynx-primary); }
-.lynx-feature h3 { margin: 0; font-size: 1.05rem; font-weight: 700; }
-.lynx-feature p { margin: 0.5rem 0 0; font-size: 0.92rem; line-height: 1.55; }
-.lynx-steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-.lynx-step { counter-increment: step; padding: 1.25rem; border: 1px solid var(--lynx-border); border-radius: var(--lynx-radius); background: var(--lynx-surface); }
-.lynx-step::before { content: counter(step); display: grid; place-items: center; width: 1.9rem; height: 1.9rem; margin-bottom: 0.75rem; border-radius: 999px; background: var(--lynx-primary); color: #fff; font-size: 0.85rem; font-weight: 700; }
-.dark .lynx-step::before { color: #0A0F1E; }
-.lynx-step strong { display: block; font-size: 1rem; }
-.lynx-step span { display: block; margin-top: 0.3rem; font-size: 0.88rem; color: var(--lynx-muted); line-height: 1.5; }
-.lynx-cta { max-width: 46rem; margin: 0 auto; padding: 2.75rem 1.5rem; text-align: center; background: linear-gradient(135deg, var(--lynx-primary-soft), transparent 70%), var(--lynx-surface); }
-.lynx-cta p { margin: 0.75rem 0 1.5rem; }
-.lynx-footer-note { margin: 0; }
-.lynx-landing-footer { border-top: 1px solid var(--lynx-border); padding: 1.5rem 1rem; }
-.lynx-landing-footer-inner { max-width: 72rem; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
 
 @media (min-width: 640px) {
-  .lynx-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .lynx-grid-3 { grid-template-columns: repeat(3, 1fr); }
 }
 @media (min-width: 960px) {
   .lynx-auth-page { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .lynx-auth-aside { display: flex; flex-direction: column; justify-content: space-between; gap: 3rem; padding: 2.5rem 3.5rem; color: #fff; background: radial-gradient(40rem 24rem at 0% 0%, rgba(165, 171, 255, 0.35), transparent 60%), linear-gradient(150deg, #4338CA, #312E81 60%, #1E1B4B); }
-  .lynx-auth-aside .lynx-logo-link { color: #fff; }
-  .lynx-auth-legal { margin: 0; font-size: 0.8rem; color: rgba(255, 255, 255, 0.6); }
+  .lynx-auth-aside { display: flex; flex-direction: column; justify-content: space-between; gap: 3rem; padding: 2.5rem 3.5rem; color: var(--lynx-text); background: var(--lynx-surface-2); border-right: 1px solid var(--lynx-border); }
+  .lynx-auth-aside .lynx-logo-link { color: var(--lynx-text); }
+    .lynx-auth-legal { margin: 0; font-size: 0.8rem; color: var(--lynx-muted); }
 }
 @media (min-width: 1024px) {
   .lynx-sidebar { display: block; position: sticky; top: 4rem; align-self: flex-start; height: calc(100vh - 4rem); overflow-y: auto; }
   .lynx-main { padding: 2.5rem 2.5rem 4rem; }
+  .lynx-sidebar { transition: width 0.2s ease, padding 0.2s ease; }
+  .lynx-sidebar-toggle { display: grid; }
+  .lynx-sidebar-collapsed { width: 4.5rem; padding-inline: 0.6rem; }
+  .lynx-sidebar-collapsed .lynx-sidebar-top { justify-content: center; }
+  .lynx-sidebar-collapsed .lynx-sidebar-top .lynx-eyebrow, .lynx-sidebar-collapsed .lynx-navlabel { display: none; }
+  .lynx-sidebar-collapsed .lynx-navlink { justify-content: center; padding-inline: 0; }
+  .lynx-sidebar-collapsed .lynx-navlink-active::before { left: -0.35rem; }
   .lynx-header-inner { padding: 0 2rem; }
   .lynx-exams-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
   .lynx-details-grid { grid-template-columns: minmax(0, 360px) minmax(0, 1fr); }
@@ -95,5 +92,112 @@
   .lynx-main { padding: 1.25rem 1rem 3rem; }
   .lynx-inline-form { flex-wrap: wrap; }
   .lynx-inline-form .lynx-grow { flex-basis: 100%; }
-  .lynx-landing-hero { padding-top: 3rem; }
 }
+
+/* Dashboard header: greeting on the left, calendar on the right */
+.lynx-page-header.lynx-page-header-has-aside { align-items: flex-start; }
+.lynx-page-header-aside { flex-shrink: 0; width: 17.5rem; }
+.lynx-calendar { padding: 1rem; border: 1px solid var(--lynx-border); border-radius: var(--lynx-radius); background: var(--lynx-surface); }
+.lynx-calendar-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.6rem; }
+.lynx-calendar-title { margin: 0; font-size: 0.92rem; font-weight: 650; }
+.lynx-calendar-nav { display: flex; align-items: center; gap: 0.15rem; }
+.lynx-calendar-nav button { display: grid; place-items: center; min-width: 1.7rem; height: 1.7rem; padding: 0 0.3rem; border: 0; border-radius: var(--lynx-radius-sm); background: none; color: var(--lynx-muted); font-size: 1.1rem; line-height: 1; cursor: pointer; }
+.lynx-calendar-nav button:hover { background: var(--lynx-surface-2); color: var(--lynx-text); }
+.lynx-calendar-nav button:focus-visible { outline: 2px solid var(--lynx-primary); outline-offset: 1px; }
+.lynx-calendar-nav .lynx-calendar-today { font-size: 0.72rem; font-weight: 600; color: var(--lynx-primary); }
+.lynx-calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+.lynx-calendar-weekday { padding-bottom: 0.3rem; color: var(--lynx-muted); font-size: 0.68rem; font-weight: 600; }
+.lynx-calendar-day { position: relative; display: grid; place-items: center; aspect-ratio: 1; border-radius: var(--lynx-radius-sm); font-size: 0.78rem; }
+.lynx-calendar-day.is-today { background: var(--lynx-primary); color: #fff; font-weight: 700; }
+.dark .lynx-calendar-day.is-today { color: #0A0F1E; }
+.lynx-calendar-day.has-event::after { content: ""; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--lynx-accent); }
+.lynx-calendar-day.has-event { font-weight: 700; }
+.lynx-calendar-legend { display: flex; align-items: center; gap: 0.4rem; margin: 0.6rem 0 0; color: var(--lynx-muted); font-size: 0.72rem; }
+.lynx-calendar-legend i { width: 6px; height: 6px; border-radius: 50%; background: var(--lynx-accent); }
+@media (max-width: 1023px) {
+  .lynx-page-header-aside { width: 100%; max-width: 22rem; }
+}
+
+/* Section tabs and the pinned Settings link */
+.lynx-section-tabs { margin-bottom: 1.5rem; }
+.lynx-sidebar-footer { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--lynx-border); }
+@media (max-width: 1023px) {
+  /* On small screens the menu is a single scrolling row, with Settings at its end */
+  .lynx-shell .lynx-sidebar { display: flex; align-items: center; gap: 0.5rem; }
+  .lynx-shell .lynx-sidebar .lynx-nav { flex: 1; min-width: 0; }
+  .lynx-sidebar-footer { margin: 0; padding: 0; border: 0; flex-shrink: 0; }
+}
+
+/* Study streak badge above the calendar */
+.lynx-streak { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.6rem; padding: 0.45rem 0.8rem; border: 1px solid var(--lynx-border); border-radius: 999px; background: var(--lynx-surface); color: var(--lynx-muted); font-size: 0.82rem; width: fit-content; }
+.lynx-streak strong { color: var(--lynx-text); font-size: 0.95rem; }
+.lynx-streak.is-active { border-color: var(--lynx-accent); }
+.lynx-streak-fire { font-size: 1.05rem; line-height: 1; }
+@media (min-width: 640px) {
+  .lynx-grid-3.lynx-grid-2 { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Sidebar due-card badge */
+.lynx-nav-badge { margin-left: auto; min-width: 1.4rem; padding: 0.05rem 0.45rem; border-radius: 999px; background: var(--lynx-accent); color: #1f1300; font-size: 0.72rem; font-weight: 700; text-align: center; }
+.lynx-sidebar-collapsed .lynx-nav-badge { position: absolute; top: 0.2rem; right: 0.2rem; min-width: 1rem; padding: 0 0.3rem; font-size: 0.62rem; }
+
+/* Topic page */
+.lynx-topic-tabs { flex-wrap: wrap; }
+.lynx-topic-toolbar { gap: 1rem; flex-wrap: wrap; }
+
+/* Subjects page: topics listed inside each subject */
+.lynx-topic-list { list-style: none; margin: 1rem 0 0; padding: 0; border-top: 1px solid var(--lynx-border); }
+.lynx-topic-list li { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.55rem 0; border-bottom: 1px solid var(--lynx-border); }
+.lynx-topic-link { font-weight: 600; color: var(--lynx-text); text-decoration: none; }
+.lynx-topic-link:hover { color: var(--lynx-primary); }
+
+/* Home */
+.lynx-home-card { display: grid; gap: 0.35rem; align-content: start; justify-items: start; }
+.lynx-home-number { margin: 0; font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.lynx-continue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0.75rem; }
+.lynx-continue-card { display: grid; gap: 0.3rem; text-decoration: none; color: var(--lynx-text); }
+
+/* Floating Pomodoro timer */
+.lynx-pomo, .lynx-pomo-fab { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 40; }
+.lynx-pomo { display: grid; gap: 0.5rem; width: 15rem; padding: 0.9rem 1rem; border: 1px solid var(--lynx-border-strong); border-radius: var(--lynx-radius); background: var(--lynx-surface); box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18); }
+.lynx-pomo.is-focus { border-color: var(--lynx-primary); }
+.lynx-pomo.is-break { border-color: var(--lynx-completed); }
+.lynx-pomo-phase { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lynx-muted); }
+.lynx-pomo.is-focus .lynx-pomo-phase { color: var(--lynx-primary); }
+.lynx-pomo.is-break .lynx-pomo-phase { color: var(--lynx-completed); }
+.lynx-pomo-clock { font-size: 2.2rem; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
+.lynx-pomo-bar { height: 4px; overflow: hidden; border-radius: 999px; background: var(--lynx-surface-2); }
+.lynx-pomo-bar span { display: block; height: 100%; background: var(--lynx-primary); transition: width 1s linear; }
+.lynx-pomo.is-break .lynx-pomo-bar span { background: var(--lynx-completed); }
+.lynx-pomo-topic { margin: 0; overflow: hidden; color: var(--lynx-muted); font-size: 0.82rem; white-space: nowrap; text-overflow: ellipsis; }
+.lynx-pomo-actions { display: flex; gap: 0.5rem; }
+.lynx-pomo-actions .lynx-btn { flex: 1; }
+.lynx-pomo-icon { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border: 0; border-radius: var(--lynx-radius-sm); background: none; color: var(--lynx-muted); cursor: pointer; font-size: 1rem; }
+.lynx-pomo-icon:hover { background: var(--lynx-surface-2); color: var(--lynx-text); }
+.lynx-pomo-picker { gap: 0.6rem; }
+.lynx-pomo-fab { padding: 0.65rem 1.1rem; border: 1px solid var(--lynx-border-strong); border-radius: 999px; background: var(--lynx-surface); color: var(--lynx-text); box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16); font: inherit; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; }
+.lynx-pomo-fab:hover { border-color: var(--lynx-primary); color: var(--lynx-primary); }
+.lynx-pomo-fab.is-focus { border-color: var(--lynx-primary); color: var(--lynx-primary); }
+.lynx-pomo-fab.is-break { border-color: var(--lynx-completed); color: var(--lynx-completed); }
+.lynx-pomo-icon:focus-visible, .lynx-pomo-fab:focus-visible { outline: 2px solid var(--lynx-primary); outline-offset: 2px; }
+.dark .lynx-pomo, .dark .lynx-pomo-fab { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); }
+@media (max-width: 480px) {
+  .lynx-pomo, .lynx-pomo-fab { right: 1rem; bottom: 1rem; }
+  .lynx-pomo { width: calc(100vw - 2rem); }
+}
+
+/* Watch tab: how much of each video has been watched */
+.lynx-watch-info { min-width: 0; }
+.lynx-watch-progress { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.45rem; }
+.lynx-watch-progress .lynx-progress-track { flex: 1; max-width: 18rem; height: 0.4rem; }
+.lynx-watch-progress .lynx-caption { white-space: nowrap; }
+
+/* Video player: the progress bar is also a seek bar. Shaded = watched so far, thumb = where playback is. */
+.lynx-seek { display: grid; gap: 0.45rem; margin-top: 0.5rem; }
+.lynx-seek-track { width: 100%; height: 0.55rem; margin: 0.25rem 0; border-radius: 999px; background: linear-gradient(to right, var(--lynx-primary) 0 var(--watched, 0%), var(--lynx-surface-2) var(--watched, 0%) 100%); box-shadow: inset 0 0 0 1px var(--lynx-border); appearance: none; -webkit-appearance: none; cursor: pointer; }
+.lynx-seek-track:disabled { cursor: default; opacity: 0.7; }
+.lynx-seek-track::-webkit-slider-thumb { width: 1rem; height: 1rem; border: 2px solid var(--lynx-surface); border-radius: 50%; background: var(--lynx-text); -webkit-appearance: none; }
+.lynx-seek-track::-moz-range-thumb { width: 0.85rem; height: 0.85rem; border: 2px solid var(--lynx-surface); border-radius: 50%; background: var(--lynx-text); }
+.lynx-seek-track:disabled::-webkit-slider-thumb { opacity: 0; }
+.lynx-seek-track:disabled::-moz-range-thumb { opacity: 0; }
+.lynx-seek-track:focus-visible { outline: 2px solid var(--lynx-primary); outline-offset: 3px; }

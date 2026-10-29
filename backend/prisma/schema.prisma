@@ -76,10 +76,11 @@ model User {
   id                Int                @id @default(autoincrement())
   name              String
   email             String             @unique
-  password          String
+  password          String?
+  googleId          String?            @unique
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
-  exams             Exam[]
+  subjects          Subject[]
   studySessions     StudySession[]
   quizResults       QuizResult[]
   aiContents        AiContent[]
@@ -93,30 +94,17 @@ model User {
   documentChunks    DocumentChunk[]
 }
 
-model Exam {
-  id              Int       @id @default(autoincrement())
-  userId          Int
-  name            String
-  examDate        DateTime
-  dailyStudyHours Float
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subjects        Subject[]
-
-  @@index([userId])
-}
-
 model Subject {
-  id        Int      @id @default(autoincrement())
-  examId    Int
+  id        Int       @id @default(autoincrement())
+  userId    Int
   name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  exam      Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  examDate  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   topics    Topic[]
 
-  @@index([examId])
+  @@index([userId])
 }
 
 model Topic {
@@ -268,22 +256,23 @@ model RecallReview {
 }
 
 model LearningResource {
-  id             Int                  @id @default(autoincrement())
-  userId         Int
-  topicId        Int
-  type           LearningResourceType
-  title          String
-  url            String               @db.Text
-  youtubeVideoId String?
-  transcript     String?              @db.Text
-  metadata       Json?
-  startedAt      DateTime?
-  watchedPercent Int                  @default(0)
-  completedAt    DateTime?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topic          Topic                @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  id              Int                  @id @default(autoincrement())
+  userId          Int
+  topicId         Int
+  type            LearningResourceType
+  title           String
+  url             String               @db.Text
+  youtubeVideoId  String?
+  transcript      String?              @db.Text
+  metadata        Json?
+  startedAt       DateTime?
+  watchedPercent  Int                  @default(0)
+  positionSeconds Int                  @default(0)
+  completedAt     DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic           Topic                @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
   @@index([userId, topicId])
   @@index([userId, type])

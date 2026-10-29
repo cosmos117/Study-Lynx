@@ -48,7 +48,7 @@ export function createTopicHubService({ db = prisma, ownedTopic = findOwnedTopic
       }),
       db.learningResource.findMany({
         where: { userId, topicId },
-        select: { id: true, title: true, url: true, watchedPercent: true, completedAt: true, updatedAt: true },
+        select: { id: true, title: true, url: true, watchedPercent: true, positionSeconds: true, completedAt: true, updatedAt: true },
         orderBy: { updatedAt: 'desc' },
       }),
       db.learningResource.findMany({ where: { userId, topicId, NOT: { transcript: null } }, select: { id: true } }),
@@ -90,8 +90,7 @@ export function createTopicHubService({ db = prisma, ownedTopic = findOwnedTopic
         id: topic.id,
         name: topic.name,
         difficulty: topic.difficulty,
-        subject: { id: topic.subject.id, name: topic.subject.name },
-        exam: { id: topic.subject.exam.id, name: topic.subject.exam.name, examDate: topic.subject.exam.examDate },
+        subject: { id: topic.subject.id, name: topic.subject.name, examDate: topic.subject.examDate },
       },
       learn: {
         videos: videos.map((video) => ({
@@ -99,6 +98,7 @@ export function createTopicHubService({ db = prisma, ownedTopic = findOwnedTopic
           title: video.title,
           url: video.url,
           watchedPercent: video.watchedPercent,
+          positionSeconds: video.positionSeconds,
           completed: Boolean(video.completedAt),
           hasTranscript: hasTranscript.has(video.id),
         })),

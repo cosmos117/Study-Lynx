@@ -13,3 +13,7 @@ export const loginSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
 });
+
+export const googleLoginSchema = z.object({
+  credential: z.string().min(20).max(4096),
+});

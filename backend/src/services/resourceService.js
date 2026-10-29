@@ -30,6 +30,11 @@ const includeResource = {
   topic: { select: { id: true, name: true, subject: { select: { id: true, name: true } } } },
 };
 
+// Videos added before the ID was saved have none stored; it can always be recovered from the URL.
+const withVideoId = (resource) => (resource.youtubeVideoId
+  ? resource
+  : { ...resource, youtubeVideoId: youtubeIdFromUrl(resource.url) });
+
 export function extractYoutubeVideoId(url) {
   const videoId = youtubeIdFromUrl(url);
   if (!videoId || !/^[A-Za-z0-9_-]{6,20}$/.test(videoId)) throw createHttpError(400, 'Enter a valid YouTube video URL');
@@ -42,7 +47,7 @@ export async function createYoutubeResource(userId, data) {
   const metadata = await youtubeMetadata(youtubeVideoId);
   return prisma.learningResource.create({
     data: {
-      userId, topicId: data.topicId, type: 'YOUTUBE', url: data.url,
+      userId, topicId: data.topicId, type: 'YOUTUBE', url: data.url, youtubeVideoId,
       title: data.title || metadata?.title || 'YouTube learning resource',
       transcript: data.transcript || null,
       metadata: metadata || undefined,
@@ -53,31 +58,43 @@ export async function createYoutubeResource(userId, data) {
 
 export async function listResources(userId, topicId) {
   if (topicId) await findOwnedTopic(userId, topicId);
-  return prisma.learningResource.findMany({
+  const resources = await prisma.learningResource.findMany({
     where: { userId, ...(topicId ? { topicId } : {}) },
     orderBy: { createdAt: 'desc' },
     include: includeResource,
   });
+  return resources.map(withVideoId);
 }
 
 export async function getResource(userId, id) {
   const resource = await prisma.learningResource.findFirst({ where: { id, userId }, include: includeResource });
   if (!resource) throw createHttpError(404, 'Learning resource not found');
-  return resource;
+  return withVideoId(resource);
 }
 
+// Watching 90% counts as finished, so skipping the outro or credits still completes a video.
+const COMPLETE_AT_PERCENT = 90;
+
+/**
+ * Records how far into a video the student has got. Progress only ever moves forward, so
+ * rewinding to rewatch a part never lowers it, and a finished video stays finished.
+ */
 export async function updateProgress(userId, id, data) {
   const resource = await getResource(userId, id);
-  const completed = data.completed || data.watchedPercent >= 90;
-  return prisma.learningResource.update({
+  const watchedPercent = data.completed ? 100 : Math.max(resource.watchedPercent || 0, data.watchedPercent);
+  const completed = Boolean(resource.completedAt) || data.completed || watchedPercent >= COMPLETE_AT_PERCENT;
+  const updated = await prisma.learningResource.update({
     where: { id: resource.id },
     data: {
-      watchedPercent: data.watchedPercent,
+      watchedPercent,
+      // Unlike the percentage, the position follows the student back when they rewind.
+      ...(data.positionSeconds !== undefined ? { positionSeconds: data.positionSeconds } : {}),
       startedAt: resource.startedAt || new Date(),
       completedAt: completed ? (resource.completedAt || new Date()) : null,
     },
     include: includeResource,
   });
+  return withVideoId(updated);
 }
 
 export async function deleteResource(userId, id) {

@@ -60,7 +60,7 @@ button.lynx-text-link { background: none; border: 0; padding: 0; cursor: pointer
 .lynx-youtube-focus { min-height: 100vh; padding: 1.5rem clamp(1rem, 4vw, 3rem); background: var(--lynx-bg); }
 .lynx-youtube-top { display: flex; align-items: center; justify-content: space-between; max-width: 1500px; margin: 0 auto 1.5rem; }
 .lynx-youtube-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(18rem, .6fr); gap: 1.5rem; max-width: 1500px; margin: 0 auto; }
-.lynx-youtube-player { aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--lynx-radius); background: #0b1020; box-shadow: var(--lynx-shadow); }
+.lynx-youtube-player { aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--lynx-radius); background: #0b1020; }
 .lynx-youtube-player iframe { width: 100%; height: 100%; border: 0; }
 .lynx-youtube-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; }
 .lynx-youtube-sidebar { display: grid; align-content: start; gap: 1rem; }
@@ -83,7 +83,7 @@ button.lynx-text-link { background: none; border: 0; padding: 0; cursor: pointer
 
 @media (max-width: 1023px) {
   .lynx-sidebar { display: block; width: 100%; border-right: 0; border-bottom: 1px solid var(--lynx-border); padding: .8rem 1rem; }
-  .lynx-sidebar > .lynx-eyebrow, .lynx-sidebar > .lynx-card { display: none; }
+  .lynx-sidebar > .lynx-sidebar-top, .lynx-sidebar > .lynx-card { display: none; }
   .lynx-sidebar .lynx-nav { display: flex; overflow-x: auto; gap: .35rem; margin-top: 0; padding-bottom: .1rem; }
   .lynx-sidebar .lynx-navlink { flex-shrink: 0; }
   .lynx-sidebar .lynx-navlink-active::before { display: none; }
@@ -113,20 +113,35 @@ button.lynx-text-link { background: none; border: 0; padding: 0; cursor: pointer
 .lynx-rating-hard { color: var(--lynx-accent); border-color: rgba(245,158,11,.35); }
 .lynx-rating-good { color: var(--lynx-completed); border-color: rgba(16,185,129,.35); }
 .lynx-rating-easy { color: var(--lynx-primary); border-color: rgba(79,70,229,.35); }
-.lynx-mindmap-canvas { position: relative; overflow: hidden; min-height: 28rem; border: 1px solid var(--lynx-border); border-radius: var(--lynx-radius); background: radial-gradient(circle at center, rgba(79,70,229,.07), transparent 65%); cursor: grab; touch-action: none; }
-.lynx-mindmap-canvas:active { cursor: grabbing; }
-.lynx-mindmap-svg { width: 100%; height: 28rem; }
-.lynx-mindmap-controls { display: flex; gap: .5rem; margin-top: .75rem; }
-.lynx-mindmap-node { cursor: pointer; }
-.lynx-mindmap-node circle { fill: var(--lynx-surface); stroke: var(--lynx-primary); stroke-width: 2; }
-.lynx-mindmap-node.root circle { fill: var(--lynx-primary); }
-.lynx-mindmap-node text { fill: var(--lynx-text); font-size: 13px; font-weight: 700; pointer-events: none; }
-.lynx-mindmap-node.root text { fill: #fff; }
-.lynx-mindmap-edge { stroke: var(--lynx-border); stroke-width: 2; }
+.lynx-mm-toolbar { gap: 1rem; flex-wrap: wrap; }
+.lynx-mm-zoom { display: flex; gap: 0.35rem; }
+.lynx-mm-zoom-value { min-width: 4rem; font-variant-numeric: tabular-nums; }
+.lynx-mm-viewport { overflow: auto; max-height: 75vh; margin-top: 0.75rem; border: 1px solid var(--lynx-border); border-radius: var(--lynx-radius); }
+.lynx-mm-sizer { position: relative; margin: 0 auto; }
+.lynx-mm { position: relative; display: grid; gap: 1rem; padding: 1.5rem 0; }
+/* Fixed natural size: the map is laid out once, then scaled as a whole when zooming. */
+.lynx-mm.is-wide { position: absolute; top: 0; left: 0; width: max-content; padding: 2.5rem 2rem; grid-template-columns: 19rem auto 19rem; column-gap: 15rem; align-items: center; transform-origin: 0 0; }
+.lynx-mm.is-stacked .lynx-mm-centre { order: -1; }
+.lynx-mm-links { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.lynx-mm-branch { pointer-events: visiblePainted; }
+.lynx-mm-curve { fill: none; stroke: var(--lynx-primary); stroke-width: 2; opacity: 0.55; }
+.lynx-mm-curve-label { fill: var(--lynx-text); font-size: 12.5px; font-weight: 700; letter-spacing: 0.01em; paint-order: stroke; stroke: var(--lynx-bg); stroke-width: 4px; stroke-linejoin: round; }
+.lynx-mm-col { position: relative; display: grid; gap: 1.25rem; align-content: center; }
+.lynx-mm-centre { position: relative; display: flex; justify-content: center; }
+.lynx-mm-root { max-width: 12rem; padding: 1rem 1.25rem; border: 2px solid var(--lynx-primary); border-radius: 999px; background: var(--lynx-primary-soft); color: var(--lynx-text); font-size: 1.05rem; font-weight: 700; line-height: 1.25; text-align: center; }
+.lynx-mm-box { position: relative; padding: 0.75rem 0.9rem; border: 1px solid var(--lynx-border-strong); border-radius: var(--lynx-radius-md); background: var(--lynx-surface); font-size: 0.84rem; line-height: 1.45; }
+.lynx-mm-box-title { margin: 0 0 0.3rem; font-size: 0.9rem; font-weight: 700; }
+/* On wide screens the branch name is written along its curve, so the box heading is only for screen readers. */
+.lynx-mm.is-wide .lynx-mm-box-title { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.lynx-mm-note { margin: 0; color: var(--lynx-muted); }
+.lynx-mm-points { margin: 0.4rem 0 0; padding-left: 1.05rem; }
+.lynx-mm-points li { margin-top: 0.2rem; }
+.lynx-mm-points li span { color: var(--lynx-muted); }
+.lynx-mm-points .lynx-mm-points { margin-top: 0.15rem; }
 @media (max-width: 560px) { .lynx-rating-grid { grid-template-columns: repeat(2, 1fr); } }
 
 /* Topic Learning Hub */
-.lynx-hub-next { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.5rem; border-left: 3px solid var(--lynx-primary); background: linear-gradient(110deg, var(--lynx-primary-soft), transparent 55%), var(--lynx-surface); }
+.lynx-hub-next { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.5rem; border-left: 3px solid var(--lynx-primary); background: var(--lynx-surface); }
 .lynx-hub-next p { margin: .2rem 0 0; }
 .lynx-loop { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1rem 0 0; padding: 0; list-style: none; }
 .lynx-loop-step { padding: .28rem .75rem; border: 1px solid var(--lynx-border); border-radius: 999px; font-size: .76rem; font-weight: 600; color: var(--lynx-muted); background: var(--lynx-surface); }
@@ -206,6 +221,11 @@ button.lynx-text-link { background: none; border: 0; padding: 0; cursor: pointer
 .lynx-quiz-wrong { background: rgba(239,68,68,.1); color: #B91C1C; }
 .dark .lynx-quiz-correct { color: #6EE7B7; }
 .dark .lynx-quiz-wrong { color: #FCA5A5; }
+/* Submitted quiz: the right option in green, the student's wrong pick in red. Hover is off once graded. */
+.lynx-quiz-question:disabled .lynx-option:hover { border-color: var(--lynx-border); background: none; }
+.lynx-option.is-correct, .lynx-quiz-question:disabled .lynx-option.is-correct:hover { border-color: var(--lynx-completed); background: rgba(16,185,129,.08); }
+.lynx-option.is-wrong, .lynx-quiz-question:disabled .lynx-option.is-wrong:hover { border-color: var(--lynx-overdue); background: rgba(239,68,68,.08); }
+.lynx-quiz-score { margin: .5rem 0 1rem; }
 @media (max-width: 1023px) {
   .lynx-sidebar .lynx-nav { -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); scroll-padding-inline: 1rem; }
 }

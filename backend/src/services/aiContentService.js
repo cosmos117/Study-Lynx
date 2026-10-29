@@ -4,12 +4,15 @@ import { aiService } from './ai/aiService.js';
 import { AiError } from './ai/errors.js';
 import { materialContextService } from './rag/materialContextService.js';
 
+// Gemini's hidden reasoning counts toward this limit, so it must leave room for a whole quiz or set of notes.
+const GENERATION_MAX_OUTPUT_TOKENS = 8192;
+
 const types = new Set(['NOTES', 'FLASHCARDS', 'QUIZ', 'MINDMAP']);
 
 export async function findOwnedTopic(userId, topicId) {
   const topic = await prisma.topic.findFirst({
-    where: { id: topicId, subject: { exam: { userId } } },
-    include: { subject: { include: { exam: true } } },
+    where: { id: topicId, subject: { userId } },
+    include: { subject: true },
   });
   if (!topic) {
     const error = new Error('Topic not found');
@@ -22,7 +25,6 @@ export async function findOwnedTopic(userId, topicId) {
 function contextFor(topic, userNotes = '', material = null) {
   const trimmedNotes = userNotes.slice(0, env.ai.inputMaxChars);
   return {
-    examName: topic.subject.exam.name,
     subjectName: topic.subject.name,
     topicName: topic.name,
     topicDifficulty: topic.difficulty,
@@ -91,6 +93,7 @@ export async function getOrGenerate({ userId, topicId, type, regenerate = false,
       user: feature.buildPrompt(context),
       schema: feature.schema,
       userId,
+      maxOutputTokens: GENERATION_MAX_OUTPUT_TOKENS,
     });
     return await prisma.aiContent.update({
       where: { id: lock.id },

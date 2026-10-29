@@ -9,7 +9,8 @@ const TOAST_MS = 5000;
  *
  *   const { toast, confirm } = useFeedback();
  *   toast('Saved');  toast('Could not save', 'error');
- *   if (await confirm({ title: 'Delete exam?', message: '...', confirmLabel: 'Delete', danger: true })) { ... }
+ *   if (await confirm({ title: 'Delete topic?', message: '...', confirmLabel: 'Delete', danger: true })) { ... }
+ *   await confirm({ title: 'Break time', message: '...', confirmLabel: 'OK', hideCancel: true }); // a one-button notice
  */
 export function FeedbackProvider({ children }) {
   const [toasts, setToasts] = useState([]);
@@ -58,8 +59,8 @@ export function FeedbackProvider({ children }) {
             <h2 id="lynx-dialog-title" className="lynx-h2">{dialog.title}</h2>
             <p id="lynx-dialog-message" className="lynx-muted lynx-sub">{dialog.message}</p>
             <div className="lynx-dialog-actions">
-              <button type="button" autoFocus onClick={() => close(false)} className="lynx-btn lynx-btn-ghost">{dialog.cancelLabel || 'Cancel'}</button>
-              <button type="button" onClick={() => close(true)} className={`lynx-btn ${dialog.danger ? 'lynx-btn-danger' : 'lynx-btn-primary'}`}>{dialog.confirmLabel || 'Confirm'}</button>
+              {!dialog.hideCancel && <button type="button" autoFocus onClick={() => close(false)} className="lynx-btn lynx-btn-ghost">{dialog.cancelLabel || 'Cancel'}</button>}
+              <button type="button" autoFocus={dialog.hideCancel} onClick={() => close(true)} className={`lynx-btn ${dialog.danger ? 'lynx-btn-danger' : 'lynx-btn-primary'}`}>{dialog.confirmLabel || 'Confirm'}</button>
             </div>
           </div>
         )}

@@ -25,19 +25,19 @@
 
   /* Effects */
   --lynx-ring: rgba(79, 70, 229, 0.2);
-  --lynx-glow: rgba(79, 70, 229, 0.09);
-  --lynx-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --lynx-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.06);
+  --lynx-glow: transparent;
+  --lynx-shadow-sm: none;
+  --lynx-shadow: none;
   --lynx-amber-glow: 0 0 0 3px rgba(245, 158, 11, 0.22);
 
   /* Shape and layout */
-  --lynx-radius: 1rem;
-  --lynx-radius-md: 0.75rem;
-  --lynx-radius-sm: 0.55rem;
+  --lynx-radius: 0.5rem;
+  --lynx-radius-md: 0.4rem;
+  --lynx-radius-sm: 0.3rem;
   --lynx-max: 1440px;
 
   /* Type */
-  --lynx-font: Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --lynx-font: "DM Sans", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
   --lynx-weight-heading: 700;
 
   font-family: var(--lynx-font);
@@ -61,9 +61,9 @@
   --lynx-text: #E8EBF7;
   --lynx-muted: #9AA7C2;
   --lynx-ring: rgba(139, 147, 255, 0.32);
-  --lynx-glow: rgba(99, 102, 241, 0.16);
-  --lynx-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --lynx-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.32);
+  --lynx-glow: transparent;
+  --lynx-shadow-sm: none;
+  --lynx-shadow: none;
   color: var(--lynx-text);
   background: var(--lynx-bg);
 }
@@ -83,16 +83,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* A soft brand glow at the top of every page. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0 0 auto 0;
-  height: 30rem;
-  background: radial-gradient(60rem 20rem at 50% -6rem, var(--lynx-glow), transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-}
 #root { position: relative; z-index: 1; }
 
 button, input, select, textarea { font: inherit; color: inherit; }

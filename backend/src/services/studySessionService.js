@@ -2,7 +2,7 @@ import prisma from '../config/prisma.js';
 import { createHttpError } from '../utils/httpError.js';
 
 const includeSession = {
-  topic: { select: { id: true, name: true, difficulty: true, subject: { select: { id: true, name: true, exam: { select: { id: true, name: true, examDate: true } } } } } },
+  topic: { select: { id: true, name: true, difficulty: true, subject: { select: { id: true, name: true, examDate: true } } } },
 };
 
 const dayStart = (value) => {
@@ -24,7 +24,7 @@ async function ownedSession(userId, id) {
 }
 
 async function ownedTopic(userId, topicId) {
-  const topic = await prisma.topic.findFirst({ where: { id: topicId, subject: { exam: { userId } } }, include: { subject: { include: { exam: true } } } });
+  const topic = await prisma.topic.findFirst({ where: { id: topicId, subject: { userId } }, include: { subject: true } });
   if (!topic) throw createHttpError(404, 'Topic not found');
   return topic;
 }
@@ -87,35 +87,6 @@ export async function completeSession(userId, id, actualDuration) {
 export async function skipSession(userId, id) {
   await ownedSession(userId, id);
   return prisma.studySession.update({ where: { id }, data: { status: 'SKIPPED' }, include: includeSession });
-}
-
-export async function generatePlan(userId, { examId, from = new Date(), dailyAvailableHours, topicIds, technique }) {
-  const exam = await prisma.exam.findFirst({ where: { id: examId, userId }, include: { subjects: { include: { topics: true } } } });
-  if (!exam) throw createHttpError(404, 'Exam not found');
-  const topics = exam.subjects.flatMap((subject) => subject.topics)
-    .filter((topic) => !topicIds || topicIds.includes(topic.id))
-    .sort((a, b) => ({ WEAK: 0, AVERAGE: 1, STRONG: 2 }[a.difficulty] - ({ WEAK: 0, AVERAGE: 1, STRONG: 2 }[b.difficulty]) || a.id - b.id));
-  if (!topics.length) throw createHttpError(400, 'Add topics to this exam before generating a plan');
-  const minutesPerDay = Math.max(25, Math.round((dailyAvailableHours || exam.dailyStudyHours) * 60));
-  const start = dayStart(from);
-  const end = dayStart(exam.examDate);
-  const sessions = [];
-  let cursor = 0;
-  for (let date = new Date(start); date < end && cursor < topics.length; date.setDate(date.getDate() + 1)) {
-    let used = 0;
-    while (used + 25 <= minutesPerDay && cursor < topics.length) {
-      const topic = topics[cursor % topics.length];
-      const duration = technique === 'DEEP_FOCUS' ? Math.min(50, minutesPerDay - used) : Math.min(25, minutesPerDay - used);
-      const sessionDate = new Date(date);
-      sessionDate.setHours(9 + Math.floor(used / 60), used % 60, 0, 0);
-      sessions.push({ userId, topicId: topic.id, date: sessionDate, startTime: sessionDate, duration, plannedDuration: duration, technique });
-      used += duration;
-      cursor += 1;
-    }
-  }
-  if (!sessions.length) throw createHttpError(400, 'The exam date must be in the future');
-  await prisma.studySession.createMany({ data: sessions });
-  return listSessionsByRange(userId, start, new Date(Math.min(end.getTime(), new Date(start).setDate(start.getDate() + 7))));
 }
 
 /**

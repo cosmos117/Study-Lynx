@@ -1,0 +1,125 @@
+/* Landing page. Flat cards with soft background washes. Uses the Night Lynx tokens, so it follows light and dark themes. */
+
+/* Page backdrop: soft indigo and amber washes down the page, under a fine dot pattern */
+.lynx-landing { position: relative; isolation: isolate; --wash-indigo: rgba(99, 102, 241, 0.16); --wash-amber: rgba(245, 158, 11, 0.11); --dot: rgba(79, 70, 229, 0.22); }
+.dark .lynx-landing { --wash-indigo: rgba(99, 102, 241, 0.22); --wash-amber: rgba(251, 191, 36, 0.09); --dot: rgba(165, 171, 255, 0.2); }
+.lynx-landing::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(var(--dot) 1px, transparent 1.4px) 0 0 / 1.5rem 1.5rem,
+    radial-gradient(48rem 30rem at 12% 2%, var(--wash-indigo), transparent 70%),
+    radial-gradient(40rem 26rem at 92% 14%, var(--wash-amber), transparent 70%),
+    radial-gradient(46rem 30rem at 4% 46%, var(--wash-amber), transparent 70%),
+    radial-gradient(48rem 32rem at 96% 64%, var(--wash-indigo), transparent 70%),
+    radial-gradient(50rem 28rem at 50% 100%, var(--wash-indigo), transparent 70%);
+  -webkit-mask-image: linear-gradient(#000 0, #000 92%, transparent);
+  mask-image: linear-gradient(#000 0, #000 92%, transparent);
+}
+
+.lynx-landing section[id] { scroll-margin-top: 5rem; }
+
+/* Header navigation */
+.lynx-landing .lynx-header { background: color-mix(in srgb, var(--lynx-bg) 70%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.lynx-landing-nav { display: none; gap: 0.25rem; }
+.lynx-landing-nav a { padding: 0.4rem 0.8rem; border-radius: var(--lynx-radius-sm); color: var(--lynx-muted); font-size: 0.9rem; font-weight: 500; text-decoration: none; }
+.lynx-landing-nav a:hover { color: var(--lynx-text); }
+
+/* Hero */
+.lynx-landing-hero { padding: 6rem 1rem 4rem; text-align: center; }
+.lynx-landing .lynx-landing-title { max-width: 44rem; margin: 0 auto; font-size: clamp(2.2rem, 5vw, 3.4rem); letter-spacing: -0.03em; line-height: 1.1; }
+.lynx-landing-lead { max-width: 36rem; margin: 1.25rem auto 0; font-size: 1.05rem; line-height: 1.6; text-wrap: pretty; }
+.lynx-landing-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.75rem; margin-top: 2rem; }
+.lynx-btn.lynx-btn-lg { min-height: 3rem; padding: 0.7rem 1.4rem; font-size: 1rem; }
+
+/* Product preview (decorative sample) */
+.lynx-preview-wrap { position: relative; max-width: 42rem; margin: 4rem auto 0; text-align: left; }
+.lynx-preview-wrap::before { content: ""; position: absolute; inset: 10% -8% -12%; z-index: -1; border-radius: 50%; background: var(--lynx-primary-soft); filter: blur(48px); opacity: 0.9; }
+.lynx-preview { overflow: hidden; border: 1px solid var(--lynx-border-strong); border-radius: var(--lynx-radius); background: var(--lynx-surface); }
+.lynx-preview-bar { display: flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1rem; border-bottom: 1px solid var(--lynx-border); }
+.lynx-preview-bar span { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--lynx-border-strong); }
+.lynx-preview-bar em { margin-left: 0.75rem; font-size: 0.75rem; font-style: normal; color: var(--lynx-muted); }
+.lynx-preview-body { display: grid; gap: 1rem; padding: 1.5rem; }
+.lynx-preview-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.lynx-preview-title strong { display: block; font-size: 1.3rem; letter-spacing: -0.02em; }
+.lynx-preview-title small { color: var(--lynx-muted); font-size: 0.82rem; }
+.lynx-preview-rank { display: grid; place-items: center; flex-shrink: 0; width: 1.8rem; height: 1.8rem; border: 1px solid var(--lynx-border-strong); border-radius: 50%; color: var(--lynx-muted); font-size: 0.85rem; font-weight: 600; }
+.lynx-preview-pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.lynx-preview-meter > div { display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.8rem; color: var(--lynx-muted); }
+.lynx-preview-meter b { color: var(--lynx-text); }
+.lynx-preview-meter i { display: block; height: 0.4rem; overflow: hidden; border-radius: 999px; background: var(--lynx-surface-2); }
+.lynx-preview-meter u { display: block; width: 41%; height: 100%; border-radius: inherit; background: var(--lynx-overdue); text-decoration: none; }
+.lynx-preview-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.lynx-preview-btn { padding: 0.5rem 1rem; border: 1px solid var(--lynx-border-strong); border-radius: var(--lynx-radius-md); font-size: 0.85rem; font-weight: 600; }
+.lynx-preview-btn-primary { border-color: transparent; background: var(--lynx-primary); color: #fff; }
+.dark .lynx-preview-btn-primary { color: #0A0F1E; }
+
+/* Sections */
+.lynx-landing-section { max-width: 68rem; margin: 0 auto; padding: 5rem 1rem; }
+.lynx-landing-heading { text-align: center; margin-bottom: 3rem; }
+.lynx-landing .lynx-landing-heading .lynx-h1 { margin-top: 0.6rem; font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.1rem); }
+.lynx-landing-heading p.lynx-muted { max-width: 34rem; margin: 0.8rem auto 0; line-height: 1.55; }
+
+/* Features: open layout that lifts into a card on hover */
+.lynx-feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1rem; }
+.lynx-landing .lynx-feature { padding: 1.5rem; border: 1px solid transparent; border-radius: var(--lynx-radius); background: transparent; transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease; }
+.lynx-landing .lynx-feature:hover { transform: translateY(-4px); border-color: var(--lynx-border-strong); background: var(--lynx-surface); }
+.lynx-feature-icon { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; margin-bottom: 1rem; border: 1px solid var(--lynx-border); border-radius: var(--lynx-radius-md); background: var(--lynx-primary-soft); color: var(--lynx-primary); transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease; }
+.lynx-feature:hover .lynx-feature-icon { transform: scale(1.08); border-color: var(--lynx-primary); background: var(--lynx-primary); color: #fff; }
+.dark .lynx-feature:hover .lynx-feature-icon { color: #0A0F1E; }
+.lynx-feature h3 { margin: 0; font-size: 1rem; font-weight: 650; transition: color 0.2s ease; }
+.lynx-feature:hover h3 { color: var(--lynx-primary); }
+.lynx-feature p { margin: 0.5rem 0 0; font-size: 0.92rem; line-height: 1.6; }
+
+/* AI Tutor spotlight */
+.lynx-spotlight { display: grid; align-items: center; gap: 2.5rem; padding: 2rem 1.5rem; border: 1px solid var(--lynx-border); border-radius: calc(var(--lynx-radius) * 2); background: linear-gradient(160deg, var(--lynx-primary-soft), transparent 55%), var(--lynx-surface); }
+.lynx-landing .lynx-spotlight-copy .lynx-h1 { margin-top: 0.6rem; font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); }
+.lynx-spotlight-copy p.lynx-muted { margin: 1rem 0 0; line-height: 1.6; }
+.lynx-checklist { list-style: none; display: grid; gap: 0.75rem; margin: 1.5rem 0 0; padding: 0; }
+.lynx-checklist li { position: relative; padding-left: 1.6rem; line-height: 1.5; }
+.lynx-checklist li::before { content: "✓"; position: absolute; left: 0; top: 0; color: var(--lynx-primary); font-weight: 700; }
+.lynx-tutor-mock { display: grid; gap: 0.5rem; padding: 1.25rem; border: 1px solid var(--lynx-border); border-radius: var(--lynx-radius); background: var(--lynx-bg); }
+.lynx-tutor-mock-label { margin: 0.5rem 0 0; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--lynx-muted); }
+.lynx-tutor-mock-label:first-child { margin-top: 0; }
+.lynx-tutor-q { justify-self: end; max-width: 88%; padding: 0.65rem 0.95rem; border-radius: var(--lynx-radius); background: var(--lynx-primary); color: #fff; font-weight: 500; }
+.dark .lynx-tutor-q { color: #0A0F1E; }
+.lynx-tutor-a { padding: 0.85rem 1rem; border-left: 2px solid var(--lynx-primary); line-height: 1.6; }
+.lynx-tutor-sources-mock { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+/* How it works: a flow of arrows. Vertical on small screens, horizontal with a return loop on wide ones */
+.lynx-steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 2.75rem; position: relative; }
+.lynx-step { counter-increment: step; position: relative; }
+.lynx-step::before { content: counter(step, decimal-leading-zero); display: block; margin-bottom: 0.6rem; color: var(--lynx-primary); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.06em; }
+.lynx-step strong { display: block; font-size: 1rem; }
+.lynx-step span { display: block; margin-top: 0.3rem; font-size: 0.88rem; line-height: 1.5; color: var(--lynx-muted); }
+.lynx-step:not(:last-child)::after { content: "↓"; position: absolute; left: 0; bottom: -2.2rem; color: var(--lynx-border-strong); font-size: 1.25rem; line-height: 1; }
+
+/* Closing call to action */
+.lynx-landing-final { padding-bottom: 6rem; }
+.lynx-cta { display: grid; justify-items: center; padding: 4rem 1.5rem; border: 1px solid var(--lynx-border); border-radius: calc(var(--lynx-radius) * 2); background: radial-gradient(30rem 14rem at 50% 0%, var(--lynx-primary-soft), transparent 75%), var(--lynx-surface); text-align: center; }
+.lynx-cta p { max-width: 30rem; margin: 0.6rem 0 1.75rem; color: var(--lynx-muted); }
+
+/* Footer */
+.lynx-landing-footer { border-top: 1px solid var(--lynx-border); padding: 1.75rem 1rem; }
+.lynx-landing-footer-inner { max-width: 68rem; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem 2rem; }
+.lynx-footer-links { display: flex; gap: 1.25rem; }
+.lynx-footer-links a { color: var(--lynx-muted); font-size: 0.88rem; font-weight: 500; text-decoration: none; }
+.lynx-footer-links a:hover { color: var(--lynx-primary); }
+.lynx-footer-note { margin: 0; }
+
+@media (max-width: 480px) {
+  .lynx-landing-hero { padding-top: 3.5rem; }
+  .lynx-preview-body { padding: 1.15rem; }
+  .lynx-landing-actions .lynx-btn { width: 100%; }
+}
+@media (min-width: 820px) {
+  .lynx-landing-nav { display: flex; }
+}
+@media (min-width: 900px) {
+  .lynx-spotlight { grid-template-columns: 1fr 1fr; padding: 3rem; }
+}
+@media (min-width: 1100px) {
+  .lynx-steps { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2.25rem; padding-bottom: 3.25rem; }
+  .lynx-step:not(:last-child)::after { content: "→"; left: auto; right: -1.7rem; bottom: auto; top: 1.6rem; }
+  /* Return path: Revise loops back to Plan */
+  .lynx-steps::before { content: ""; position: absolute; left: 4%; right: 4%; bottom: 0.4rem; height: 1.6rem; border: 1px solid var(--lynx-border-strong); border-top: 0; border-radius: 0 0 var(--lynx-radius) var(--lynx-radius); pointer-events: none; }
+  .lynx-steps::after { content: "▲"; position: absolute; left: 4%; bottom: 1.55rem; transform: translateX(-50%); color: var(--lynx-border-strong); font-size: 0.6rem; line-height: 1; pointer-events: none; }
+}

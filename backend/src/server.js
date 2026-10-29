@@ -3,7 +3,7 @@ import { env } from './config/env.js';
 import { documentIngestionService } from './services/rag/documentIngestionService.js';
 
 const server = app.listen(env.port, () => {
-  console.log(`Studylyx API listening on port ${env.port}`);
+  console.log(`Study Lynx API listening on port ${env.port}`);
 });
 
 documentIngestionService.failStaleDocuments().catch((error) => {

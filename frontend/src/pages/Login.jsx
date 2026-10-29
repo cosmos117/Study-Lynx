@@ -3,11 +3,14 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import Alert from '../components/Alert.jsx';
 import BrandMark from '../components/BrandMark.jsx';
+import GoogleButton from '../components/GoogleButton.jsx';
+import PasswordInput from '../components/PasswordInput.jsx';
 import usePageTitle from '../hooks/usePageTitle.js';
+import { errorMessage } from '../utils/aiErrors.js';
 
 export default function Login() {
   usePageTitle('Log in');
-  const { user, login } = useAuth();
+  const { user, login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
@@ -23,15 +26,26 @@ export default function Login() {
       await login(form);
       navigate('/dashboard');
     } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Unable to log in');
+      setError(errorMessage(requestError, 'Unable to log in'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const googleSignIn = async (credential) => {
+    setError('');
+    try {
+      await loginWithGoogle(credential);
+      navigate('/dashboard');
+    } catch (requestError) {
+      setError(errorMessage(requestError, 'Unable to sign in with Google'));
     }
   };
 
   return (
     <AuthFormShell title="Welcome back" subtitle="Continue planning your study progress.">
       <form onSubmit={submit} className="lynx-form">
+        <GoogleButton text="signin_with" onCredential={googleSignIn} onError={setError} />
         <Field label="Email" type="email" autoComplete="email" value={form.email} onChange={(email) => setForm({ ...form, email })} />
         <Field label="Password" type="password" autoComplete="current-password" value={form.password} onChange={(password) => setForm({ ...form, password })} />
         <Alert>{error}</Alert>
@@ -50,7 +64,9 @@ function Field({ label, type, value, onChange, autoComplete }) {
   return (
     <label className="lynx-label">
       {label}
-      <input required type={type} autoComplete={autoComplete} value={value} onChange={(event) => onChange(event.target.value)} className="lynx-input" />
+      {type === 'password'
+        ? <PasswordInput required autoComplete={autoComplete} value={value} onChange={(event) => onChange(event.target.value)} />
+        : <input required type={type} autoComplete={autoComplete} value={value} onChange={(event) => onChange(event.target.value)} className="lynx-input" />}
     </label>
   );
 }
@@ -86,3 +102,4 @@ export function AuthFormShell({ title, subtitle, children }) {
     </main>
   );
 }
+

@@ -15,5 +15,7 @@ export const youtubeResourceSchema = z.object({
 });
 export const resourceProgressSchema = z.object({
   watchedPercent: percent,
+  // Where playback stopped, so the video resumes there. Capped at 24 hours.
+  positionSeconds: z.coerce.number().int().min(0).max(86400).optional(),
   completed: z.boolean().optional().default(false),
 });

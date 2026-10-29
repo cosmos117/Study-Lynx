@@ -33,13 +33,6 @@ export const completeSessionSchema = z.object({
   actualDuration: duration.optional(),
 });
 
-export const planSchema = z.object({
-  examId: z.coerce.number().int().positive(),
-  from: date.optional(),
-  dailyAvailableHours: z.coerce.number().finite().min(0.25).max(24).optional(),
-  topicIds: z.array(z.coerce.number().int().positive()).min(1).optional(),
-  technique: technique.default('POMODORO'),
-});
 
 export const studyNowSchema = z.object({
   plannedDuration: duration.optional(),

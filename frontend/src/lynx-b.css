@@ -6,10 +6,10 @@
 .lynx-btn:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
 .lynx-btn-block { width: 100%; }
 .lynx-btn-sm { min-height: 2.15rem; padding: 0.35rem 0.8rem; font-size: 0.82rem; border-radius: var(--lynx-radius-sm); }
-.lynx-btn-primary { background: linear-gradient(180deg, #5B54EC, #4F46E5); color: #fff; box-shadow: 0 1px 2px rgba(49, 46, 129, 0.35), 0 6px 16px rgba(79, 70, 229, 0.22); }
-.lynx-btn-primary:hover:not(:disabled) { background: linear-gradient(180deg, #4F46E5, #4338CA); }
-.dark .lynx-btn-primary { background: linear-gradient(180deg, #9AA1FF, #8B93FF); color: #0A0F1E; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px rgba(99, 102, 241, 0.25); }
-.dark .lynx-btn-primary:hover:not(:disabled) { background: linear-gradient(180deg, #A5ABFF, #9AA1FF); }
+.lynx-btn-primary { background: var(--lynx-primary); color: #fff; }
+.lynx-btn-primary:hover:not(:disabled) { background: var(--lynx-primary-hover); }
+.dark .lynx-btn-primary { background: var(--lynx-primary); color: #0A0F1E; }
+.dark .lynx-btn-primary:hover:not(:disabled) { background: var(--lynx-primary-hover); }
 .lynx-btn-ghost { background: var(--lynx-surface); border-color: var(--lynx-border-strong); color: var(--lynx-text); box-shadow: var(--lynx-shadow-sm); }
 .lynx-btn-ghost:hover:not(:disabled) { border-color: var(--lynx-primary); background: var(--lynx-surface-2); }
 .lynx-btn-danger { background: #DC2626; color: #fff; }

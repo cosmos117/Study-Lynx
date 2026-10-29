@@ -4,8 +4,6 @@ import helmet from 'helmet';
 import { env } from './config/env.js';
 import { errorMiddleware, notFoundMiddleware } from './middleware/errorMiddleware.js';
 import authRoutes from './routes/authRoutes.js';
-import dashboardRoutes from './routes/dashboardRoutes.js';
-import examRoutes from './routes/examRoutes.js';
 import subjectRoutes from './routes/subjectRoutes.js';
 import topicRoutes from './routes/topicRoutes.js';
 import motivationRoutes from './routes/motivationRoutes.js';
@@ -26,13 +24,11 @@ app.use(express.json());
 app.get('/api/health', (_request, response) => {
   response.json({
     status: 'ok',
-    message: 'Studylyx API is running',
+    message: 'Study Lynx API is running',
   });
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/exams', examRoutes);
 app.use('/api', subjectRoutes);
 app.use('/api', topicRoutes);
 app.use('/api/motivation', motivationRoutes);

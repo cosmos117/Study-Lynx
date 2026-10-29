@@ -77,6 +77,11 @@ export async function dueFlashcards(userId, topicId, limit = 20) {
   });
 }
 
+/** How many cards are due now, for the sidebar badge. A single COUNT query, cheap enough for every page. */
+export function countDueFlashcards(userId) {
+  return prisma.cardReview.count({ where: dueCardsWhere(userId) });
+}
+
 export async function getRecallSummary(userId) {
   const now = new Date();
   const start = new Date(now); start.setHours(0, 0, 0, 0);
@@ -127,6 +132,34 @@ export async function generateFlashcards(userId, topicId, regenerate, sources) {
 export async function getQuiz(userId, topicId) {
   await findOwnedTopic(userId, topicId);
   return prisma.aiContent.findUnique({ where: { userId_topicId_type: { userId, topicId, type: 'QUIZ' } } });
+}
+
+/**
+ * The quiz plus the student's latest submitted attempt at this version of it, so a finished quiz
+ * still shows its answers and score when the student comes back. A newly generated quiz has
+ * a newer `updatedAt` than any attempt, so it starts fresh.
+ */
+export async function getQuizWithAttempt(userId, topicId) {
+  const quiz = await getQuiz(userId, topicId);
+  if (quiz?.status !== 'READY') return { quiz, attempt: null };
+  const latest = await prisma.quizResult.findFirst({
+    where: { userId, topicId, attemptedAt: { gte: quiz.updatedAt } },
+    orderBy: { attemptedAt: 'desc' },
+  });
+  const attempt = latest && Array.isArray(latest.answers)
+    ? { score: latest.score, totalQuestions: latest.totalQuestions, answers: latest.answers, attemptedAt: latest.attemptedAt }
+    : null;
+  return { quiz, attempt };
+}
+
+/**
+ * Deletes the topic's quiz: its questions, and with them the student's answers and result.
+ * Past scores are kept so they still count toward progress.
+ */
+export async function deleteQuiz(userId, topicId) {
+  const quiz = await getQuiz(userId, topicId);
+  if (!quiz) throw createHttpError(404, 'There is no quiz to clear');
+  await prisma.aiContent.delete({ where: { id: quiz.id } });
 }
 
 function shuffledQuiz(content) {
