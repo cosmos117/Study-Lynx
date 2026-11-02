@@ -5,8 +5,6 @@ const youtubeUrl = z.string().trim().url().max(2048);
 const percent = z.coerce.number().int().min(0).max(100);
 
 export const resourceIdSchema = z.object({ id });
-export const topicResourceParamsSchema = z.object({ topicId: id });
-export const resourceQuerySchema = z.object({ topicId: id.optional() });
 export const youtubeResourceSchema = z.object({
   topicId: id,
   url: youtubeUrl,

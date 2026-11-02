@@ -5,6 +5,7 @@ const ERROR_STATUS = {
   AI_INVALID_OUTPUT: 502,
   AI_TIMEOUT: 503,
   AI_BUSY: 409,
+  AI_RATE_LIMITED: 429,
 };
 
 export class AiError extends Error {

@@ -40,9 +40,6 @@ describe('YouTube resources', () => {
   it('recovers the id from the URL for videos saved without one', async () => {
     db.learningResource.findFirst.mockResolvedValue({ id: 1, url: 'https://www.youtube.com/watch?v=KWkm1Gip4j4', youtubeVideoId: null });
     expect((await resources.getResource(7, 1)).youtubeVideoId).toBe('KWkm1Gip4j4');
-
-    db.learningResource.findMany.mockResolvedValue([{ id: 1, url: 'https://youtu.be/abcdefghijk', youtubeVideoId: null }]);
-    expect((await resources.listResources(7))[0].youtubeVideoId).toBe('abcdefghijk');
   });
 
   it('keeps a stored id as it is', async () => {

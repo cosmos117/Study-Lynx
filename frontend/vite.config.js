@@ -6,4 +6,13 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // React and the router change rarely, so they get their own file that browsers keep cached
+        // across app updates.
+        manualChunks: { vendor: ['react', 'react-dom', 'react-router-dom'] },
+      },
+    },
+  },
 });

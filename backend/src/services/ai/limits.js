@@ -4,7 +4,16 @@ function utcDateKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
 }
 
-export function createMemoryUsageStore() {
+/**
+ * The calendar day in the AI provider's quota time zone (Google resets daily quotas at midnight
+ * Pacific time). The shared daily limit is counted per quota day so it lines up with the provider's;
+ * each student's own limit stays on the UTC day.
+ */
+export function quotaDayKey(date = new Date(), timeZone = 'America/Los_Angeles') {
+  return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
+}
+
+export function createMemoryUsageStore({ quotaTimeZone } = {}) {
   const entries = new Map();
 
   return {
@@ -12,19 +21,19 @@ export function createMemoryUsageStore() {
       return entries.get(`${userId}:${utcDateKey(date)}`) || 0;
     },
     async getGlobalCount(date = new Date()) {
-      return entries.get(`global:${utcDateKey(date)}`) || 0;
+      return entries.get(`global:${quotaDayKey(date, quotaTimeZone)}`) || 0;
     },
     async increment(userId, date = new Date()) {
-      const key = utcDateKey(date);
-      const userKey = `${userId}:${key}`;
-      const globalKey = `global:${key}`;
+      const userKey = `${userId}:${utcDateKey(date)}`;
+      const globalKey = `global:${quotaDayKey(date, quotaTimeZone)}`;
       entries.set(userKey, (entries.get(userKey) || 0) + 1);
       entries.set(globalKey, (entries.get(globalKey) || 0) + 1);
     },
   };
 }
 
-export function createPrismaUsageStore(prisma) {
+export function createPrismaUsageStore(prisma, { quotaTimeZone } = {}) {
+  const globalDay = (date) => new Date(quotaDayKey(date, quotaTimeZone));
   return {
     async getUserCount(userId, date = new Date()) {
       const row = await prisma.aiUsage.findUnique({
@@ -34,12 +43,13 @@ export function createPrismaUsageStore(prisma) {
     },
     async getGlobalCount(date = new Date()) {
       const row = await prisma.aiUsage.findFirst({
-        where: { userId: null, date: new Date(date.toISOString().slice(0, 10)), feature: 'ALL' },
+        where: { userId: null, date: globalDay(date), feature: 'ALL' },
       });
       return row?.count || 0;
     },
     async increment(userId, date = new Date()) {
       const normalizedDate = new Date(date.toISOString().slice(0, 10));
+      const sharedDate = globalDay(date);
       await prisma.$transaction(async (transaction) => {
         await transaction.aiUsage.upsert({
           where: { userId_date_feature: { userId, date: normalizedDate, feature: 'ALL' } },
@@ -47,11 +57,11 @@ export function createPrismaUsageStore(prisma) {
           update: { count: { increment: 1 } },
         });
         // The shared (all users) counter has a NULL userId, which the unique index cannot match.
-        const shared = await transaction.aiUsage.findFirst({ where: { userId: null, date: normalizedDate, feature: 'ALL' } });
+        const shared = await transaction.aiUsage.findFirst({ where: { userId: null, date: sharedDate, feature: 'ALL' } });
         if (shared) {
           await transaction.aiUsage.update({ where: { id: shared.id }, data: { count: { increment: 1 } } });
         } else {
-          await transaction.aiUsage.create({ data: { date: normalizedDate, feature: 'ALL', count: 1 } });
+          await transaction.aiUsage.create({ data: { date: sharedDate, feature: 'ALL', count: 1 } });
         }
       });
     },

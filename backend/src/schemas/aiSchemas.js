@@ -7,15 +7,12 @@ export const aiGenerateSchema = z.object({
   // Ground the generation in these materials (uploaded documents / videos with a transcript).
   documentIds: idList,
   resourceIds: idList,
+  // Quizzes only: which sections to generate (all, or only MCQs, 2-mark or 5-mark questions).
+  quizType: z.enum(['all', 'mcq', 'short', 'long']).optional().default('all'),
 });
 export const noteSaveSchema = z.object({ content: z.string().trim().min(1).max(50000) });
-export const flashcardSchema = z.object({ question: z.string().trim().min(5).max(200), answer: z.string().trim().min(1).max(250) });
 export const flashcardIdSchema = z.object({ id: z.coerce.number().int().positive() });
 export const reviewSchema = z.object({ rating: z.enum(['AGAIN', 'HARD', 'GOOD', 'EASY']) });
-export const dueQuerySchema = z.object({
-  topicId: z.coerce.number().int().positive().optional(),
-  limit: z.coerce.number().int().positive().max(100).default(20),
-});
 export const quizSubmitSchema = z.object({
   answers: z.array(z.object({ questionIndex: z.number().int().nonnegative(), selectedIndex: z.number().int().min(-1).max(3) })).max(20),
 });

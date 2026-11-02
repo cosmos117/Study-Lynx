@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { env } from '../../config/env.js';
 import { createRetrievalService } from './retrievalService.js';
 
 const queryEmbedding = [0.5, 0.5];
@@ -19,7 +20,7 @@ describe('retrievalService', () => {
 
     expect(embedding.embedText).toHaveBeenCalledWith('BCNF vs 3NF');
     expect(vectorStore.similaritySearch).toHaveBeenCalledWith({
-      userId: 7, queryEmbedding, topK: 3, threshold: 0.5, documentIds: [10], topicId: 4,
+      userId: 7, queryEmbedding, queryText: 'BCNF vs 3NF', topK: 3, threshold: 0.5, documentIds: [10], topicId: 4,
     });
     expect(result.chunks).toHaveLength(2);
     expect(result.queryEmbedding).toBe(queryEmbedding);
@@ -63,5 +64,48 @@ describe('retrievalService', () => {
     const result = await service.retrieve({ userId: 7, question: 'unrelated' });
     expect(result.chunks).toEqual([]);
     expect(log.mock.calls[0][0].topScore).toBeNull();
+  });
+
+  it("embeds questions with the provider's query mode when it has one", async () => {
+    const { service, vectorStore, embedding } = build();
+    embedding.embedQuery = vi.fn().mockResolvedValue([0.1, 0.9]);
+    await service.retrieve({ userId: 7, question: 'what is BCNF?' });
+    expect(embedding.embedQuery).toHaveBeenCalledWith('what is BCNF?');
+    expect(embedding.embedText).not.toHaveBeenCalled();
+    expect(vectorStore.similaritySearch.mock.calls[0][0].queryEmbedding).toEqual([0.1, 0.9]);
+  });
+
+  it('falls back to keyword search when the embedding provider fails', async () => {
+    const { service, vectorStore, embedding, log } = build([chunk(1, 10, 0.7)]);
+    embedding.embedText.mockRejectedValue(new Error('quota exceeded'));
+    const result = await service.retrieve({ userId: 7, question: 'BCNF' });
+    expect(vectorStore.similaritySearch.mock.calls[0][0]).toMatchObject({ queryEmbedding: null, queryText: 'BCNF' });
+    expect(result.chunks).toHaveLength(1);
+    expect(log).toHaveBeenCalledWith(expect.objectContaining({ event: 'rag.embedding_failed' }));
+    expect(log).toHaveBeenCalledWith(expect.objectContaining({ event: 'rag.retrieval', searchMode: 'keyword' }));
+  });
+
+  it("uses the embedding provider's own threshold when none is configured", async () => {
+    const { service, vectorStore, embedding } = build();
+    embedding.defaultThreshold = 0.6;
+    await service.retrieve({ userId: 7, question: 'x' });
+    const used = vectorStore.similaritySearch.mock.calls[0][0].threshold;
+    expect([0.6, env.rag.similarityThreshold]).toContain(used);
+  });
+
+  it('reuses the vector for a question it has already embedded', async () => {
+    const { service, embedding } = build();
+    await service.retrieve({ userId: 7, question: 'what is BCNF?' });
+    await service.retrieve({ userId: 7, question: 'what is BCNF?' });
+    await service.retrieve({ userId: 7, question: 'what is 3NF?' });
+    expect(embedding.embedText).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not remember a failed embedding', async () => {
+    const { service, embedding } = build();
+    embedding.embedText.mockRejectedValueOnce(new Error('offline'));
+    await service.retrieve({ userId: 7, question: 'BCNF' });
+    await service.retrieve({ userId: 7, question: 'BCNF' });
+    expect(embedding.embedText).toHaveBeenCalledTimes(2);
   });
 });

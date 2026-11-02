@@ -1,10 +1,19 @@
 import prisma from '../config/prisma.js';
 import { createHttpError } from '../utils/httpError.js';
 
-// Subjects come with their topics, so the Subjects page needs a single request.
+// Subjects come with their topics and shared sources, so the Subjects page needs a single request.
 const subjectInclude = {
   topics: { select: { id: true, name: true, difficulty: true }, orderBy: { name: 'asc' } },
+  documents: {
+    select: { id: true, name: true, type: true, status: true, pageCount: true, errorMessage: true, _count: { select: { chunks: true } } },
+    orderBy: { updatedAt: 'desc' },
+  },
 };
+
+const withPassages = ({ documents = [], ...subject }) => ({
+  ...subject,
+  documents: documents.map(({ _count, ...document }) => ({ ...document, passages: _count.chunks })),
+});
 
 async function findOwnedSubject(userId, subjectId) {
   const subject = await prisma.subject.findFirst({ where: { id: subjectId, userId }, select: { id: true } });
@@ -13,20 +22,21 @@ async function findOwnedSubject(userId, subjectId) {
 }
 
 export async function createSubject(userId, data) {
-  return prisma.subject.create({ data: { ...data, userId }, include: subjectInclude });
+  return withPassages(await prisma.subject.create({ data: { ...data, userId }, include: subjectInclude }));
 }
 
 export async function listSubjects(userId) {
-  return prisma.subject.findMany({
+  const subjects = await prisma.subject.findMany({
     where: { userId },
     orderBy: [{ examDate: { sort: 'asc', nulls: 'last' } }, { name: 'asc' }],
     include: subjectInclude,
   });
+  return subjects.map(withPassages);
 }
 
 export async function updateSubject(userId, subjectId, data) {
   await findOwnedSubject(userId, subjectId);
-  return prisma.subject.update({ where: { id: subjectId }, data, include: subjectInclude });
+  return withPassages(await prisma.subject.update({ where: { id: subjectId }, data, include: subjectInclude }));
 }
 
 export async function deleteSubject(userId, subjectId) {

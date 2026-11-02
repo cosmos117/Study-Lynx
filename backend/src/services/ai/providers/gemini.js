@@ -2,8 +2,11 @@ import { AiProviderError, AiTimeoutError } from '../errors.js';
 
 const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-export function createGeminiProvider({ apiKey, model, fetchImpl = fetch }) {
-  return {
+export function createGeminiProvider({ apiKey, model, thinkingLevel = 'default', fetchImpl = fetch }) {
+  // Models that don't support a thinking level reject it; then it is dropped for the rest of the run.
+  let sendThinking = thinkingLevel && thinkingLevel !== 'default';
+
+  const provider = {
     name: 'gemini',
     model,
     async generate({ system, user, temperature, maxOutputTokens, timeoutMs, jsonMode }) {
@@ -25,10 +28,19 @@ export function createGeminiProvider({ apiKey, model, fetchImpl = fetch }) {
                 temperature,
                 maxOutputTokens,
                 ...(jsonMode ? { responseMimeType: 'application/json' } : {}),
+                ...(sendThinking ? { thinkingConfig: { thinkingLevel } } : {}),
               },
             }),
           },
         );
+
+        if (!response.ok && response.status === 400 && sendThinking) {
+          const detail = await (response.clone?.() ?? response).text?.().catch(() => '') ?? '';
+          if (/thinking/i.test(detail)) {
+            sendThinking = false;
+            return provider.generate({ system, user, temperature, maxOutputTokens, timeoutMs, jsonMode });
+          }
+        }
 
         if (!response.ok) {
           const retryAfter = response.headers.get('retry-after');
@@ -54,5 +66,5 @@ export function createGeminiProvider({ apiKey, model, fetchImpl = fetch }) {
       }
     },
   };
+  return provider;
 }
-

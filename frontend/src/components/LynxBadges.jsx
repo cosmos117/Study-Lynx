@@ -1,5 +1,3 @@
-import { difficultyColor, statusColor } from '../theme/tokens.js';
-
 export function LynxBadge({ color, children }) {
   return (
     <span className="lynx-pill">
@@ -7,12 +5,4 @@ export function LynxBadge({ color, children }) {
       {children}
     </span>
   );
-}
-
-export function DifficultyBadge({ level }) {
-  return <LynxBadge color={difficultyColor(level)}>{level}</LynxBadge>;
-}
-
-export function StatusBadge({ status, label }) {
-  return <LynxBadge color={statusColor(status)}>{label || status}</LynxBadge>;
 }

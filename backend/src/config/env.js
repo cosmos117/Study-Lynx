@@ -36,13 +36,23 @@ export const env = {
     timeoutMs: readNumber('AI_TIMEOUT_MS', 30000, { integer: true, min: 1 }),
     maxRetries: readNumber('AI_MAX_RETRIES', 3, { integer: true, min: 0 }),
     dailyLimit: readNumber('AI_DAILY_LIMIT', null, { integer: true, min: 1 }),
-    userDailyLimit: readNumber('AI_USER_DAILY_LIMIT', 30, { integer: true, min: 1 }),
+    userDailyLimit: readNumber('AI_USER_DAILY_LIMIT', 15, { integer: true, min: 1 }),
+    // Shared by everyone: keep just under the provider's requests-per-minute quota (Gemini free
+    // tier Flash-Lite: 15). Requests beyond it wait briefly for a slot instead of being rejected.
+    requestsPerMinute: readNumber('AI_REQUESTS_PER_MINUTE', 14, { integer: true, min: 1 }),
+    // The provider's daily quota resets at midnight in this time zone (Google: Pacific time), so the
+    // shared daily limit (AI_DAILY_LIMIT) is counted on the same day.
+    quotaTimeZone: process.env.AI_QUOTA_TIMEZONE || 'America/Los_Angeles',
     lockTimeoutSeconds: readNumber('AI_LOCK_TIMEOUT_SECONDS', 90, { integer: true, min: 1 }),
     inputMaxChars: readNumber('AI_INPUT_MAX_CHARS', 12000, { integer: true, min: 1 }),
+    // How much hidden reasoning Gemini does before answering. "low" is about 2-3x faster than the
+    // model default (a quiz in ~6 s instead of ~15 s) with valid output; "default" leaves it to the model.
+    thinkingLevel: process.env.AI_THINKING_LEVEL || 'low',
   },
   rag: {
     topK: readNumber('RAG_TOP_K', 5, { integer: true, min: 1, max: 50 }),
-    similarityThreshold: readNumber('RAG_SIMILARITY_THRESHOLD', 0.35, { min: 0, max: 1 }),
+    // Empty means "use the embedding provider's own default" (scores differ a lot between providers).
+    similarityThreshold: readNumber('RAG_SIMILARITY_THRESHOLD', null, { min: 0, max: 1 }),
     maxChunkChars: readNumber('RAG_MAX_CHUNK_CHARS', 1200, { integer: true, min: 100 }),
     chunkOverlapChars: readNumber('RAG_CHUNK_OVERLAP_CHARS', 200, { integer: true, min: 0 }),
     maxDocumentChars: readNumber('RAG_MAX_DOCUMENT_CHARS', 300000, { integer: true, min: 1000 }),
@@ -51,6 +61,12 @@ export const env = {
       .split(',')
       .map((item) => item.trim())
       .filter(Boolean),
-    embeddingProvider: process.env.RAG_EMBEDDING_PROVIDER || 'local',
+    // auto: Gemini embeddings when GEMINI_API_KEY is set, otherwise the offline keyword-hashing fallback.
+    embeddingProvider: process.env.RAG_EMBEDDING_PROVIDER || 'auto',
+    embeddingModel: process.env.RAG_EMBEDDING_MODEL || 'gemini-embedding-001',
+    // Gemini embedding quotas (free tier: 100 requests and 30K tokens per minute; each passage in a
+    // batch counts as a request). Indexing is paced to stay under them.
+    embedRequestsPerMinute: readNumber('RAG_EMBED_REQUESTS_PER_MINUTE', 90, { integer: true, min: 1 }),
+    embedTokensPerMinute: readNumber('RAG_EMBED_TOKENS_PER_MINUTE', 28000, { integer: true, min: 1000 }),
   },
 };

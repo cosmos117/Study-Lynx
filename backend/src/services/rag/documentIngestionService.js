@@ -62,17 +62,22 @@ export function createDocumentIngestionService({
     }
   }
 
-  async function ensureTopic(userId, topicId) {
+  async function ensureOwner(userId, { topicId, subjectId }) {
     if (topicId) await assertTopicOwned(userId, topicId);
+    if (subjectId) {
+      const subject = await db.subject.findFirst({ where: { id: subjectId, userId }, select: { id: true } });
+      if (!subject) throw createHttpError(404, 'Subject not found');
+    }
   }
 
-  async function createRow({ userId, topicId, name, type, mimeType, sizeBytes, sourceUrl }) {
+  async function createRow({ userId, topicId, subjectId, name, type, mimeType, sizeBytes, sourceUrl }) {
     const cleanName = sanitizeName(name);
     if (!cleanName) throw createHttpError(400, 'Document name is required');
     return db.document.create({
       data: {
         userId,
         topicId: topicId || null,
+        subjectId: subjectId || null,
         name: cleanName,
         type,
         status: 'PROCESSING',
@@ -143,12 +148,13 @@ export function createDocumentIngestionService({
   }
 
   /** Validate and accept an uploaded file; processing continues in the background. */
-  async function ingestFile({ userId, topicId, name, mimeType, buffer, size }) {
+  async function ingestFile({ userId, topicId, subjectId, name, mimeType, buffer, size }) {
     validateFile({ mimeType, size, buffer });
-    await ensureTopic(userId, topicId);
+    await ensureOwner(userId, { topicId, subjectId });
     const document = await createRow({
       userId,
       topicId,
+      subjectId,
       name,
       type: mimeType === 'application/pdf' ? 'PDF' : 'NOTE',
       mimeType,
@@ -159,13 +165,14 @@ export function createDocumentIngestionService({
   }
 
   /** Accept pasted text (user notes or a YouTube transcript). */
-  async function ingestText({ userId, topicId, name, type, text, sourceUrl }) {
+  async function ingestText({ userId, topicId, subjectId, name, type, text, sourceUrl }) {
     if (!TEXT_TYPES.has(type)) throw createHttpError(400, `Unsupported document type: ${type}`);
     if (!cleanText(text)) throw createHttpError(400, 'Document text is empty');
-    await ensureTopic(userId, topicId);
+    await ensureOwner(userId, { topicId, subjectId });
     const document = await createRow({
       userId,
       topicId,
+      subjectId,
       name,
       type,
       mimeType: type === 'YOUTUBE' ? 'text/x-youtube-transcript' : 'text/plain',
@@ -182,46 +189,11 @@ export function createDocumentIngestionService({
     return document;
   }
 
-  async function listDocuments(userId, { topicId, status, type } = {}) {
-    return db.document.findMany({
-      where: {
-        userId,
-        ...(topicId ? { topicId } : {}),
-        ...(status ? { status } : {}),
-        ...(type ? { type } : {}),
-      },
-      include: documentInclude,
-      orderBy: { updatedAt: 'desc' },
-    });
-  }
-
-  /** Stored chunks of a document, for the "source details" view. */
-  async function listChunks(userId, id, { limit = 50, offset = 0 } = {}) {
-    await getDocument(userId, id);
-    return db.documentChunk.findMany({
-      where: { documentId: id, userId },
-      select: { id: true, chunkIndex: true, content: true, metadata: true },
-      orderBy: { chunkIndex: 'asc' },
-      skip: offset,
-      take: limit,
-    });
-  }
-
   async function deleteDocument(userId, id) {
     const document = await getDocument(userId, id);
     await vectorStore.removeDocument(document.id, userId);
     await db.document.deleteMany({ where: { id: document.id, userId } });
     return document;
-  }
-
-  async function attachToTopic(userId, id, topicId) {
-    const document = await getDocument(userId, id);
-    await ensureTopic(userId, topicId);
-    return db.document.update({
-      where: { id: document.id },
-      data: { topicId: topicId || null },
-      include: documentInclude,
-    });
   }
 
   /** Fail documents left mid-processing by a crash or restart. */
@@ -242,10 +214,7 @@ export function createDocumentIngestionService({
     ingestFile,
     ingestText,
     getDocument,
-    listDocuments,
-    listChunks,
     deleteDocument,
-    attachToTopic,
     failStaleDocuments,
     whenIdle,
   };

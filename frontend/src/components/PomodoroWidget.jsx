@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { usePomodoro } from '../context/PomodoroContext.jsx';
+import { usePomodoro, usePomodoroClock } from '../context/PomodoroContext.jsx';
 import useTopicOptions from '../hooks/useTopicOptions.js';
 
 const PHASE_LABEL = { focus: 'Focus', break: 'Break' };
@@ -47,17 +47,18 @@ function TopicPicker({ onStart, onClose }) {
 /** A floating Pomodoro timer shown on every signed-in page. */
 export default function PomodoroWidget() {
   const pomodoro = usePomodoro();
+  const { remaining, clock } = usePomodoroClock();
   const [minimized, setMinimized] = useState(false);
 
   if (pomodoro.phase === 'idle') return <IdleWidget onStart={pomodoro.start} />;
 
   const label = PHASE_LABEL[pomodoro.phase];
-  const progress = pomodoro.durationMs ? 100 - (pomodoro.remaining / pomodoro.durationMs) * 100 : 0;
+  const progress = pomodoro.durationMs ? 100 - (remaining / pomodoro.durationMs) * 100 : 0;
 
   if (minimized) {
     return (
-      <button type="button" onClick={() => setMinimized(false)} className={`lynx-pomo-fab is-${pomodoro.phase}`} aria-label={`${label} timer, ${pomodoro.clock} left. Expand`}>
-        {pomodoro.clock}
+      <button type="button" onClick={() => setMinimized(false)} className={`lynx-pomo-fab is-${pomodoro.phase}`} aria-label={`${label} timer, ${clock} left. Expand`}>
+        {clock}
       </button>
     );
   }
@@ -68,7 +69,7 @@ export default function PomodoroWidget() {
         <span className="lynx-pomo-phase">{label}{pomodoro.paused ? ' · paused' : ''}</span>
         <button type="button" onClick={() => setMinimized(true)} className="lynx-pomo-icon" aria-label="Minimize timer">–</button>
       </div>
-      <div className="lynx-pomo-clock" role="timer" aria-live="off">{pomodoro.clock}</div>
+      <div className="lynx-pomo-clock" role="timer" aria-live="off">{clock}</div>
       <div className="lynx-pomo-bar" aria-hidden="true"><span style={{ width: `${progress}%` }} /></div>
       <p className="lynx-pomo-topic">{pomodoro.phase === 'focus' ? pomodoro.topicName : 'Step away from the screen'}</p>
       <div className="lynx-pomo-actions">

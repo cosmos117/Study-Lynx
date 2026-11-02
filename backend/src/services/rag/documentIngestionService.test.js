@@ -50,6 +50,8 @@ function createFakeDb() {
       },
     },
     documentChunk: { findMany: async () => [] },
+    // User 7 owns subject 30; user 8 owns subject 40.
+    subject: { findFirst: async ({ where }) => ({ 30: 7, 40: 8 }[where.id] === where.userId ? { id: where.id } : null) },
   };
 }
 
@@ -82,6 +84,18 @@ async function ingestNotes(userId, name = 'DBMS Notes', text = notes, extra = {}
   await ctx.service.whenIdle();
   return ctx.service.getDocument(userId, document.id);
 }
+
+describe('subject sources', () => {
+  it('stores a source against a subject the user owns', async () => {
+    const document = await ingestNotes(7, 'Textbook', notes, { subjectId: 30 });
+    expect(document).toMatchObject({ status: 'READY', subjectId: 30, topicId: null });
+  });
+
+  it('refuses a subject that belongs to someone else, before storing anything', async () => {
+    await expect(ctx.service.ingestText({ userId: 7, subjectId: 40, name: 'Textbook', type: 'NOTE', text: notes })).rejects.toMatchObject({ statusCode: 404 });
+    expect(ctx.db.documents).toHaveLength(0);
+  });
+});
 
 describe('ingestion pipeline', () => {
   it('accepts text immediately as PROCESSING, then marks it READY with searchable chunks', async () => {
@@ -227,48 +241,26 @@ describe('ownership isolation', () => {
     expect(probing.chunks).toEqual([]);
   });
 
-  it('hides other users\' documents from get, list, chunks, attach and delete', async () => {
+  it('hides other users\' documents from get and delete', async () => {
     const document = await ingestNotes(7, 'Private');
 
     await expect(ctx.service.getDocument(8, document.id)).rejects.toMatchObject({ statusCode: 404 });
-    await expect(ctx.service.listChunks(8, document.id)).rejects.toMatchObject({ statusCode: 404 });
-    await expect(ctx.service.attachToTopic(8, document.id, 2)).rejects.toMatchObject({ statusCode: 404 });
     await expect(ctx.service.deleteDocument(8, document.id)).rejects.toMatchObject({ statusCode: 404 });
-    expect(await ctx.service.listDocuments(8)).toEqual([]);
 
     expect((await ctx.service.getDocument(7, document.id)).name).toBe('Private');
     const { chunks } = await ctx.retrieval.retrieve({ userId: 7, question: 'BCNF', threshold: 0 });
     expect(chunks.length).toBeGreaterThan(0);
   });
 
-  it('refuses to attach a document to someone else\'s topic', async () => {
-    const document = await ingestNotes(7, 'Mine');
-    await expect(ctx.service.attachToTopic(7, document.id, 2)).rejects.toMatchObject({ statusCode: 404 });
-  });
 });
 
 describe('document management', () => {
-  it('lists documents filtered by topic, status and type', async () => {
-    await ingestNotes(7, 'Attached', notes, { topicId: 1 });
-    await ingestNotes(7, 'Loose');
-    await ingestNotes(7, 'Huge', 'word '.repeat(2000));
-
-    expect(await ctx.service.listDocuments(7)).toHaveLength(3);
-    expect((await ctx.service.listDocuments(7, { topicId: 1 })).map((d) => d.name)).toEqual(['Attached']);
-    expect((await ctx.service.listDocuments(7, { status: 'FAILED' })).map((d) => d.name)).toEqual(['Huge']);
-  });
-
-  it('attaches and detaches a topic', async () => {
-    const document = await ingestNotes(7, 'Notes');
-    expect((await ctx.service.attachToTopic(7, document.id, 1)).topicId).toBe(1);
-    expect((await ctx.service.attachToTopic(7, document.id, null)).topicId).toBeNull();
-  });
 
   it('deleting a document removes its chunks from retrieval', async () => {
     const document = await ingestNotes(7, 'Doomed');
     await ctx.service.deleteDocument(7, document.id);
 
-    expect(await ctx.service.listDocuments(7)).toEqual([]);
+    await expect(ctx.service.getDocument(7, document.id)).rejects.toMatchObject({ statusCode: 404 });
     const { chunks } = await ctx.retrieval.retrieve({ userId: 7, question: 'BCNF', threshold: -1 });
     expect(chunks).toEqual([]);
   });

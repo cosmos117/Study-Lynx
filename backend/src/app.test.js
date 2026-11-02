@@ -41,11 +41,9 @@ describe('google sign-in', () => {
 describe('dashboard endpoints', () => {
   it.each([
     '/api/overview',
-    '/api/analytics',
     '/api/subjects',
     '/api/flashcards/due/count',
     '/api/motivation/today',
-    '/api/study-sessions/today',
   ])('GET %s requires authentication', async (path) => {
     expect((await fetch(`${base}${path}`)).status).toBe(401);
   });
@@ -60,11 +58,6 @@ describe('dashboard endpoints', () => {
     const expired = jwt.sign({ sub: '7' }, process.env.JWT_SECRET, { algorithm: 'HS256', expiresIn: -10 });
     const response = await fetch(`${base}/api/overview`, { headers: { Authorization: `Bearer ${expired}` } });
     expect(response.status).toBe(401);
-  });
-
-  it.each(['3', '91', 'abc'])('rejects analytics days=%s before touching the database', async (days) => {
-    const response = await fetch(`${base}/api/analytics?days=${days}`, { headers: auth() });
-    expect(response.status).toBe(400);
   });
 
   it("serves today's study quote to a signed-in user", async () => {
@@ -100,8 +93,26 @@ describe('subjects endpoints', () => {
     expect((await send('PUT', '/api/subjects/1', {})).status).toBe(400);
   });
 
-  it.each(['/api/exams', '/api/dashboard/summary', '/api/study-sessions/generate'])('%s no longer exists', async (path) => {
-    const response = await fetch(`${base}${path}`, { method: path.endsWith('generate') ? 'POST' : 'GET', headers: auth() });
+  it.each([
+    ['GET', '/api/exams'],
+    ['GET', '/api/dashboard/summary'],
+    ['POST', '/api/study-sessions/generate'],
+    ['GET', '/api/analytics'],
+    ['GET', '/api/study-sessions/today'],
+    ['POST', '/api/study-sessions'],
+    ['GET', '/api/documents'],
+    ['GET', '/api/documents/1/chunks'],
+    ['PATCH', '/api/documents/1/topic'],
+    ['GET', '/api/resources'],
+    ['GET', '/api/subjects/1/topics'],
+    ['PUT', '/api/topics/1'],
+    ['POST', '/api/topics/1/notes/generate'],
+    ['POST', '/api/topics/1/flashcards'],
+    ['PUT', '/api/flashcards/1'],
+    ['DELETE', '/api/flashcards/1'],
+    ['GET', '/api/flashcards/due'],
+  ])('%s %s no longer exists', async (method, path) => {
+    const response = await fetch(`${base}${path}`, { method, headers: auth() });
     expect(response.status).toBe(404);
   });
 });
@@ -113,15 +124,13 @@ describe('app wiring', () => {
   });
 
   it.each([
-    ['GET', '/api/documents'],
     ['POST', '/api/documents'],
     ['POST', '/api/documents/text'],
-    ['GET', '/api/documents/1'],
-    ['GET', '/api/documents/1/chunks'],
     ['DELETE', '/api/documents/1'],
-    ['PATCH', '/api/documents/1/topic'],
     ['POST', '/api/ai-tutor/ask'],
     ['DELETE', '/api/topics/1/quiz'],
+    ['GET', '/api/ai-tutor/history?topicId=1'],
+    ['DELETE', '/api/ai-tutor/history?topicId=1'],
   ])('%s %s requires authentication', async (method, path) => {
     const response = await fetch(`${base}${path}`, { method });
     expect(response.status).toBe(401);
@@ -158,7 +167,7 @@ describe('app wiring', () => {
   });
 
   it('rejects a non-numeric document id', async () => {
-    const response = await fetch(`${base}/api/documents/abc`, { headers: auth() });
+    const response = await fetch(`${base}/api/documents/abc`, { method: 'DELETE', headers: auth() });
     expect(response.status).toBe(400);
   });
 });

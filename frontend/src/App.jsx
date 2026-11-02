@@ -1,19 +1,25 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useParams, useSearchParams } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { PomodoroProvider } from './context/PomodoroContext.jsx';
 import AppLayout from './layouts/AppLayout.jsx';
+import LoadingSpinner from './components/LoadingSpinner.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
-import Dashboard from './pages/Dashboard.jsx';
 import Landing from './pages/Landing.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
-import Recall from './pages/Recall.jsx';
-import RecallReview from './pages/RecallReview.jsx';
-import Settings from './pages/Settings.jsx';
-import Subjects from './pages/Subjects.jsx';
-import Topic from './pages/Topic.jsx';
-import YoutubeLearn from './pages/YoutubeLearn.jsx';
 import { FeedbackProvider } from './components/Feedback.jsx';
+
+// The public pages load straight away; the app's pages are downloaded when first opened, so
+// visitors to the landing and sign-in pages don't download the whole app.
+const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
+const Recall = lazy(() => import('./pages/Recall.jsx'));
+const RecallReview = lazy(() => import('./pages/RecallReview.jsx'));
+const Guide = lazy(() => import('./pages/Guide.jsx'));
+const Settings = lazy(() => import('./pages/Settings.jsx'));
+const Subjects = lazy(() => import('./pages/Subjects.jsx'));
+const Topic = lazy(() => import('./pages/Topic.jsx'));
+const YoutubeLearn = lazy(() => import('./pages/YoutubeLearn.jsx'));
 
 // Old topic links used other tab names; send them to the matching tab on the topic page.
 const OLD_TAB = { Notes: 'sources', Learn: 'sources', Flashcards: 'flashcards', Recall: 'flashcards', Quiz: 'quiz', Practice: 'quiz', 'Mind map': 'mindmap', Progress: 'sources' };
@@ -30,6 +36,7 @@ function App() {
       <AuthProvider>
         <FeedbackProvider>
           <PomodoroProvider>
+            <Suspense fallback={<LoadingSpinner />}>
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
@@ -40,6 +47,7 @@ function App() {
                   <Route path="/subjects" element={<Subjects />} />
                   <Route path="/topics/:topicId" element={<Topic />} />
                   <Route path="/recall" element={<Recall />} />
+                  <Route path="/guide" element={<Guide />} />
                   <Route path="/settings" element={<Settings />} />
                 </Route>
                 <Route path="/recall/review" element={<RecallReview />} />
@@ -58,6 +66,7 @@ function App() {
               </Route>
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
+            </Suspense>
           </PomodoroProvider>
         </FeedbackProvider>
       </AuthProvider>

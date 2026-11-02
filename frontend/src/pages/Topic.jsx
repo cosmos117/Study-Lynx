@@ -12,9 +12,10 @@ import { usePomodoro } from '../context/PomodoroContext.jsx';
 import usePageTitle from '../hooks/usePageTitle.js';
 import { hubAPI } from '../services/api.js';
 import { errorMessage } from '../utils/aiErrors.js';
+import { pickSources } from '../utils/sources.js';
 
 // One tab per study feature, in the order a student would normally use them.
-export const TOPIC_TABS = [
+const TOPIC_TABS = [
   { key: 'sources', label: 'Sources', Panel: SourcesTab },
   { key: 'ask', label: 'Ask AI', Panel: AskTab },
   { key: 'flashcards', label: 'Flashcards', Panel: FlashcardsTab },
@@ -47,11 +48,8 @@ export default function Topic() {
 
   useEffect(() => { setHub(null); load(); }, [load]);
 
-  // AI generation is grounded in every ready source on the topic: documents and video transcripts.
-  const sourceBody = useMemo(() => ({
-    documentIds: (hub?.learn.documents || []).filter((document) => document.status === 'READY').map((document) => document.id),
-    resourceIds: (hub?.learn.videos || []).filter((video) => video.hasTranscript).map((video) => video.id),
-  }), [hub]);
+  // AI generation is grounded in the topic's ready sources: its own, its subject's and video transcripts.
+  const sourceBody = useMemo(() => pickSources(hub?.learn.documents, hub?.learn.videos), [hub]);
 
   if (error && !hub) {
     return <div className="lynx-stack-tight"><Alert onRetry={notFound ? undefined : load}>{error}</Alert><Link to="/subjects" className="lynx-btn lynx-btn-ghost">Back to subjects</Link></div>;

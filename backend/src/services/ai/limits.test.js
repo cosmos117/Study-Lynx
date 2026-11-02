@@ -45,3 +45,23 @@ describe('createPrismaUsageStore.increment', () => {
     expect(prisma.rows.filter((row) => row.userId === null)).toHaveLength(1);
   });
 });
+
+describe('shared daily quota day', async () => {
+  const { createMemoryUsageStore, quotaDayKey } = await import('./limits.js');
+
+  it("follows Google's Pacific-time day, not UTC", () => {
+    // 05:00 UTC on 2 Nov is still 1 Nov in California (UTC-7/-8).
+    expect(quotaDayKey(new Date('2026-11-02T05:00:00Z'))).toBe('2026-11-01');
+    expect(quotaDayKey(new Date('2026-11-02T09:00:00Z'))).toBe('2026-11-02');
+  });
+
+  it('counts the shared total per Pacific day, while each student keeps a UTC day', async () => {
+    const store = createMemoryUsageStore({ quotaTimeZone: 'America/Los_Angeles' });
+    await store.increment(1, new Date('2026-11-02T01:00:00Z')); // UTC 2 Nov, Pacific 1 Nov
+    await store.increment(1, new Date('2026-11-02T06:00:00Z')); // UTC 2 Nov, Pacific 1 Nov
+    await store.increment(1, new Date('2026-11-02T10:00:00Z')); // UTC 2 Nov, Pacific 2 Nov
+    expect(await store.getGlobalCount(new Date('2026-11-02T06:30:00Z'))).toBe(2);
+    expect(await store.getGlobalCount(new Date('2026-11-02T10:30:00Z'))).toBe(1);
+    expect(await store.getUserCount(1, new Date('2026-11-02T12:00:00Z'))).toBe(3);
+  });
+});

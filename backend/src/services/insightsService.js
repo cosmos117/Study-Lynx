@@ -124,60 +124,7 @@ export function createInsightsService({ db = prisma } = {}) {
     };
   }
 
-  /** Daily study time and recall activity plus recent quiz scores, for the Analytics page. */
-  async function getAnalytics(userId, days = 14, now = new Date()) {
-    const since = startOfDay(now);
-    since.setDate(since.getDate() - (days - 1));
-    const [sessions, reviews, quizzes] = await Promise.all([
-      db.studySession.findMany({
-        where: { userId, status: 'COMPLETED', completedAt: { gte: since } },
-        select: { completedAt: true, actualDuration: true, plannedDuration: true },
-      }),
-      db.recallReview.findMany({ where: { userId, reviewedAt: { gte: since } }, select: { reviewedAt: true, rating: true } }),
-      db.quizResult.findMany({
-        where: { userId },
-        orderBy: { attemptedAt: 'desc' },
-        take: 10,
-        select: { score: true, totalQuestions: true, attemptedAt: true, topic: { select: { id: true, name: true } } },
-      }),
-    ]);
-
-    const series = Array.from({ length: days }, (_, index) => {
-      const date = new Date(since);
-      date.setDate(since.getDate() + index);
-      return { date: localDateKey(date), studyMinutes: 0, cardsReviewed: 0 };
-    });
-    const byDate = new Map(series.map((day) => [day.date, day]));
-    for (const session of sessions) {
-      const day = byDate.get(localDateKey(session.completedAt));
-      if (day) day.studyMinutes += session.actualDuration || session.plannedDuration || 0;
-    }
-    for (const review of reviews) {
-      const day = byDate.get(localDateKey(review.reviewedAt));
-      if (day) day.cardsReviewed += 1;
-    }
-
-    const remembered = reviews.filter((review) => review.rating === 'GOOD' || review.rating === 'EASY').length;
-    return {
-      days,
-      series,
-      totals: {
-        studyMinutes: series.reduce((sum, day) => sum + day.studyMinutes, 0),
-        activeDays: series.filter((day) => day.studyMinutes > 0 || day.cardsReviewed > 0).length,
-        cardsReviewed: reviews.length,
-        recallRate: reviews.length ? Math.round((remembered / reviews.length) * 100) : null,
-      },
-      quizTrend: quizzes
-        .map((quiz) => ({
-          percent: quiz.totalQuestions ? Math.round((quiz.score / quiz.totalQuestions) * 100) : 0,
-          attemptedAt: quiz.attemptedAt,
-          topic: quiz.topic,
-        }))
-        .reverse(),
-    };
-  }
-
-  return { getOverview, getAnalytics };
+  return { getOverview };
 }
 
 export const insightsService = createInsightsService();

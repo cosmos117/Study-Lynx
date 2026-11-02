@@ -156,6 +156,11 @@ describe('tutorAnswerSchema', () => {
     });
   });
 
+  it('treats null for an optional field as left out, as models often send it', () => {
+    const parsed = tutorAnswerSchema.parse({ answer: 'A', generalExplanation: null, sourceBacked: null, needsMoreSources: null, citedSourceIndices: null });
+    expect(parsed).toEqual({ answer: 'A', generalExplanation: '', sourceBacked: false, needsMoreSources: false, citedSourceIndices: [] });
+  });
+
   it('rejects an empty answer', () => {
     expect(() => tutorAnswerSchema.parse({ answer: '' })).toThrow();
   });

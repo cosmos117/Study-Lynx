@@ -5,6 +5,7 @@ import Card from '../components/Card.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import StatCard from '../components/StatCard.jsx';
+import FlipCard from '../components/FlipCard.jsx';
 import usePageTitle from '../hooks/usePageTitle.js';
 import { flashcardAPI, recallAPI } from '../services/api.js';
 import { errorMessage } from '../utils/aiErrors.js';
@@ -86,7 +87,8 @@ export default function RecallReview() {
   useEffect(() => {
     const onKeyDown = (event) => {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) return;
-      if (event.code === 'Space') { event.preventDefault(); setRevealed((value) => !value); }
+      // A focused button handles Space itself; flipping here too would turn the card back over.
+      if (event.code === 'Space' && !(event.target instanceof HTMLButtonElement)) { event.preventDefault(); setRevealed((value) => !value); }
       if (['1', '2', '3', '4'].includes(event.key)) rate(RATINGS[Number(event.key) - 1]);
     };
     window.addEventListener('keydown', onKeyDown);
@@ -114,9 +116,7 @@ export default function RecallReview() {
       <Alert>{error}</Alert>
       <Card className="lynx-recall-card">
         <p className="lynx-eyebrow">{card.flashcard.topic.name} · {card.flashcard.topic.subject.name}</p>
-        <div className="lynx-recall-question" aria-live="polite">
-          <p><span className="sr-only">{revealed ? 'Answer: ' : 'Question: '}</span>{revealed ? card.flashcard.answer : card.flashcard.question}</p>
-        </div>
+        <FlipCard key={card.flashcard.id} question={card.flashcard.question} answer={card.flashcard.answer} flipped={revealed} onFlip={() => setRevealed((value) => !value)} />
         {!revealed ? (
           <button type="button" autoFocus onClick={() => setRevealed(true)} className="lynx-btn lynx-btn-primary">Reveal answer <span aria-hidden="true">Space</span></button>
         ) : (

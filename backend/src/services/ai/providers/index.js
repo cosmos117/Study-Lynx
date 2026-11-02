@@ -7,6 +7,7 @@ export function createConfiguredProviders({ fetchImpl = fetch } = {}) {
     gemini: () => createGeminiProvider({
       apiKey: env.ai.geminiApiKey,
       model: env.ai.model,
+      thinkingLevel: env.ai.thinkingLevel,
       fetchImpl,
     }),
     groq: () => createGroqProvider({

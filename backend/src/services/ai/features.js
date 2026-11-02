@@ -1,14 +1,5 @@
 import { z } from 'zod';
 
-const notesSchema = z.object({
-  title: z.string().min(1).max(120),
-  overview: z.string().min(40).max(600),
-  keyConcepts: z.array(z.object({ term: z.string().min(1), explanation: z.string().min(1) })).min(4).max(10),
-  examples: z.array(z.string().min(1)).min(1).max(5),
-  commonMistakes: z.array(z.string().min(1)).min(2).max(6),
-  quickRevision: z.array(z.string().min(1).max(140)).min(5).max(10),
-});
-
 const flashcardsSchema = z.object({
   cards: z.array(z.object({ question: z.string().min(5).max(200), answer: z.string().min(1).max(250) })).min(8).max(15),
 }).superRefine((value, context) => {
@@ -21,25 +12,78 @@ const flashcardsSchema = z.object({
   });
 });
 
-const quizSchema = z.object({
-  questions: z.array(z.object({
-    question: z.string().min(1),
-    options: z.array(z.string().min(1)).length(4),
-    correctIndex: z.number().int().min(0).max(3),
-    explanation: z.string().max(250),
-  })).length(10),
-}).superRefine((value, context) => {
-  const questions = value.questions.map((item) => item.question.toLowerCase().trim());
-  if (new Set(questions).size !== questions.length) context.addIssue({ code: z.ZodIssueCode.custom, message: 'Duplicate questions are not allowed' });
-  value.questions.forEach((item, index) => {
-    if (new Set(item.options.map((option) => option.toLowerCase().trim())).size !== 4) {
-      context.addIssue({ code: z.ZodIssueCode.custom, path: ['questions', index, 'options'], message: 'Options must be distinct' });
-    }
-    if (item.options.some((option) => /^(all|none) of the above$/i.test(option.trim()))) {
-      context.addIssue({ code: z.ZodIssueCode.custom, path: ['questions', index, 'options'], message: 'Unsupported option wording' });
-    }
-  });
+// A written exam question with its model answer: 2-mark answers are short, 5-mark answers fuller.
+const writtenQuestion = (maxAnswer) => z.object({
+  question: z.string().trim().min(5).max(400),
+  answer: z.string().trim().min(10).max(maxAnswer),
 });
+
+const mcqQuestion = z.object({
+  question: z.string().min(1),
+  options: z.array(z.string().min(1)).length(4),
+  correctIndex: z.number().int().min(0).max(3),
+  explanation: z.string().max(250),
+});
+
+// Each quiz section: where it sits in the JSON, how it is validated, how it is described to the model.
+const QUIZ_SECTIONS = {
+  mcq: {
+    key: 'questions',
+    schema: z.array(mcqQuestion).length(10),
+    ask: 'exactly 10 multiple-choice questions',
+    shape: `  "questions": [{
+    "question": "string",
+    "options": ["string", "string", "string", "string"],   // exactly 4 different options, never "all of the above" or "none of the above"
+    "correctIndex": 0,                                     // whole number 0 to 3, the position of the correct option
+    "explanation": "string, up to 250 characters"
+  }]                                                       // exactly 10 questions, all different`,
+  },
+  short: {
+    key: 'shortQuestions',
+    schema: z.array(writtenQuestion(700)).length(5),
+    ask: '5 two-mark questions',
+    shape: `  "shortQuestions": [{                                     // exactly 5 two-mark questions
+    "question": "string, e.g. Define X. / State two features of Y.",
+    "answer": "model answer worth 2 marks: 2 to 4 sentences, up to 600 characters"
+  }]`,
+  },
+  long: {
+    key: 'longQuestions',
+    schema: z.array(writtenQuestion(2500)).length(5),
+    ask: '5 five-mark questions',
+    shape: `  "longQuestions": [{                                      // exactly 5 five-mark questions
+    "question": "string, e.g. Explain X with an example. / Compare X and Y.",
+    "answer": "model answer worth 5 marks: about 120 to 250 words; short paragraphs, \"- \" bullets or \"1. \" steps, **bold** key terms"
+  }]`,
+  },
+};
+
+/** The quiz types a student can pick, and the sections each one contains. */
+export const QUIZ_TYPES = {
+  all: ['mcq', 'short', 'long'],
+  mcq: ['mcq'],
+  short: ['short'],
+  long: ['long'],
+};
+
+function quizSchemaFor(sections) {
+  return z.object(Object.fromEntries(sections.map((name) => [QUIZ_SECTIONS[name].key, QUIZ_SECTIONS[name].schema])))
+    .superRefine((value, context) => {
+      const questions = sections.flatMap((name) => value[QUIZ_SECTIONS[name].key]).map((item) => item.question.toLowerCase().trim());
+      if (new Set(questions).size !== questions.length) context.addIssue({ code: z.ZodIssueCode.custom, message: 'Duplicate questions are not allowed' });
+      (value.questions || []).forEach((item, index) => {
+        if (new Set(item.options.map((option) => option.toLowerCase().trim())).size !== 4) {
+          context.addIssue({ code: z.ZodIssueCode.custom, path: ['questions', index, 'options'], message: 'Options must be distinct' });
+        }
+        if (item.options.some((option) => /^(all|none) of the above$/i.test(option.trim()))) {
+          context.addIssue({ code: z.ZodIssueCode.custom, path: ['questions', index, 'options'], message: 'Unsupported option wording' });
+        }
+      });
+    });
+}
+
+/** "a", "a and b", "a, b and c" */
+const listOf = (items) => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`);
 
 const plainText = (max) => z.string().transform((value) => value.replace(/<[^>]*>/g, '').trim()).pipe(z.string().min(1).max(max));
 
@@ -64,24 +108,8 @@ const mindmapSchema = mapNode.superRefine((root, context) => {
 
 // The model is only reliable when it is shown the exact JSON structure the schemas above expect.
 const SHAPES = {
-  NOTES: `{
-  "title": "string, up to 120 characters",
-  "overview": "string, 40 to 600 characters",
-  "keyConcepts": [{ "term": "string", "explanation": "string" }],   // 4 to 10 items
-  "examples": ["string"],                                          // 1 to 5 items
-  "commonMistakes": ["string"],                                    // 2 to 6 items
-  "quickRevision": ["string, up to 140 characters"]                // 5 to 10 items
-}`,
   FLASHCARDS: `{
   "cards": [{ "question": "string, 5 to 200 characters", "answer": "string, up to 250 characters" }]   // 8 to 15 cards, all questions different
-}`,
-  QUIZ: `{
-  "questions": [{
-    "question": "string",
-    "options": ["string", "string", "string", "string"],   // exactly 4 different options, never "all of the above" or "none of the above"
-    "correctIndex": 0,                                     // whole number 0 to 3, the position of the correct option
-    "explanation": "string, up to 250 characters"
-  }]                                                       // exactly 10 questions, all different
 }`,
   MINDMAP: `{
   "label": "the topic name",
@@ -114,25 +142,30 @@ ${shape}` : '';
   return `Create ${format} for topic "${context.topicName}" in subject "${context.subjectName}". Difficulty: ${context.topicDifficulty}. Output only valid JSON. Use established exam-level facts; do not invent citations or statistics.${structure}${notes}${sources}`;
 }
 
+/**
+ * A quiz of the chosen type, in one request: all three sections, or only MCQs, 2-mark or 5-mark
+ * questions. Smaller types are shorter answers from the model, so they generate faster.
+ */
+export function quizFeature(type = 'all') {
+  const sections = QUIZ_TYPES[type] ? QUIZ_TYPES[type] : QUIZ_TYPES.all;
+  const shape = `{\n${sections.map((name) => QUIZ_SECTIONS[name].shape).join(',\n')}\n}`;
+  const ask = listOf(sections.map((name) => QUIZ_SECTIONS[name].ask));
+  return {
+    promptVersion: `quiz-v2-${sections.join('-')}`,
+    schema: quizSchemaFor(sections),
+    system: 'You create an exam practice set as JSON: multiple-choice questions have exactly four distinct options; written questions come with model answers written the way a strong student would answer in an exam for that many marks. All questions are different.',
+    buildPrompt: (context) => prompt(context, ask, shape),
+  };
+}
+
 export const featureDefinitions = {
-  NOTES: {
-    promptVersion: 'notes-v1',
-    schema: notesSchema,
-    system: 'You create concise exam-oriented study notes as JSON. Never output markdown fences or commentary.',
-    buildPrompt: (context) => prompt(context, 'structured notes', SHAPES.NOTES),
-  },
   FLASHCARDS: {
     promptVersion: 'flashcards-v1',
     schema: flashcardsSchema,
     system: 'You create precise study flashcards as JSON. Use one fact per card and short answers.',
     buildPrompt: (context) => prompt(context, '8 to 15 flashcards', SHAPES.FLASHCARDS),
   },
-  QUIZ: {
-    promptVersion: 'quiz-v1',
-    schema: quizSchema,
-    system: 'You create a multiple-choice quiz as JSON. Every question has exactly four distinct options.',
-    buildPrompt: (context) => prompt(context, 'exactly 10 multiple-choice questions', SHAPES.QUIZ),
-  },
+  QUIZ: quizFeature('all'),
   MINDMAP: {
     promptVersion: 'mindmap-v2',
     schema: mindmapSchema,
@@ -141,22 +174,3 @@ export const featureDefinitions = {
   },
 };
 
-export function notesToText(content) {
-  return [
-    `# ${content.title}`,
-    '',
-    content.overview,
-    '',
-    '## Key concepts',
-    ...content.keyConcepts.map(({ term, explanation }) => `- **${term}**: ${explanation}`),
-    '',
-    '## Examples',
-    ...content.examples.map((item) => `- ${item}`),
-    '',
-    '## Common mistakes',
-    ...content.commonMistakes.map((item) => `- ${item}`),
-    '',
-    '## Quick revision',
-    ...content.quickRevision.map((item) => `- ${item}`),
-  ].join('\n');
-}

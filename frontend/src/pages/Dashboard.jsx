@@ -65,7 +65,12 @@ export default function Dashboard() {
           <EmptyState
             title="Let's set up your first topic"
             description="Add a subject and the topics you need to learn. Each topic gets its own sources, AI help, flashcards and quiz."
-            action={<Link to="/subjects" className="lynx-btn lynx-btn-primary">Add a subject</Link>}
+            action={(
+              <div className="lynx-hub-actions">
+                <Link to="/subjects" className="lynx-btn lynx-btn-primary">Add a subject</Link>
+                <Link to="/guide" className="lynx-btn lynx-btn-ghost">How it works</Link>
+              </div>
+            )}
           />
         </Card>
       ) : (

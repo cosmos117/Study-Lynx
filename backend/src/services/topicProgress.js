@@ -10,7 +10,6 @@ const WEIGHTS = { quiz: 0.5, recall: 0.35, study: 0.15 };
 const STUDY_MINUTES_FOR_FULL_SCORE = 120;
 const WEAK_BELOW = 50;
 const STRONG_AT = 75;
-const LOW_QUIZ = 0.6;
 
 const clamp01 = (value) => Math.min(1, Math.max(0, value));
 
@@ -34,45 +33,6 @@ export function computeMastery({ quizAverage = null, recallRate = null, studyMin
   const score = Math.round(raw * 100);
   const level = score < WEAK_BELOW ? 'WEAK' : score < STRONG_AT ? 'AVERAGE' : 'STRONG';
   return { score, level, components: parts };
-}
-
-/**
- * Recommend the single most useful next action for a topic.
- * `stage` places it on the learning loop so the UI can show where the student is.
- */
-export function recommendNextStep({
-  documentCount = 0,
-  videoCount = 0,
-  cardsTotal = 0,
-  cardsDue = 0,
-  quizReady = false,
-  latestQuizFraction = null,
-  mastery = { score: null },
-  weakAreaCount = 0,
-}) {
-  if (cardsDue > 0) {
-    return { key: 'REVIEW_RECALL', stage: 'RECALL', title: `Review ${cardsDue} due card${cardsDue === 1 ? '' : 's'}`, reason: 'Spaced repetition works best when cards are reviewed on time.' };
-  }
-  if (documentCount + videoCount === 0 && cardsTotal === 0) {
-    return { key: 'ADD_MATERIAL', stage: 'LEARN', title: 'Add something to learn from', reason: 'Add a video or upload notes so flashcards, quizzes and AI Tutor can use your own material.' };
-  }
-  if (cardsTotal === 0) {
-    return { key: 'GENERATE_FLASHCARDS', stage: 'RECALL', title: 'Create flashcards', reason: 'Turn what you have learned into cards you can review.' };
-  }
-  if (latestQuizFraction === null) {
-    return quizReady
-      ? { key: 'TAKE_QUIZ', stage: 'QUIZ', title: 'Take the quiz', reason: 'A quiz shows what you actually remember.' }
-      : { key: 'GENERATE_QUIZ', stage: 'QUIZ', title: 'Create a quiz', reason: 'Test yourself to find the gaps.' };
-  }
-  if (latestQuizFraction < LOW_QUIZ || (mastery.score !== null && mastery.score < WEAK_BELOW)) {
-    return weakAreaCount > 0 || documentCount + videoCount > 0
-      ? { key: 'ASK_TUTOR', stage: 'REVISE', title: 'Revise your weak spots', reason: 'Ask AI Tutor to explain what you missed, then review your cards.' }
-      : { key: 'STUDY_NOW', stage: 'REVISE', title: 'Study this topic again', reason: 'Your recent results show room to improve.' };
-  }
-  if (mastery.score !== null && mastery.score >= STRONG_AT) {
-    return { key: 'TAKE_QUIZ', stage: 'QUIZ', title: 'Confirm it with a quiz', reason: 'You are doing well. Retake the quiz to lock it in.' };
-  }
-  return { key: 'STUDY_NOW', stage: 'LEARN', title: 'Start a study session', reason: 'Keep building momentum on this topic.' };
 }
 
 // How much history counts: the last 50 flashcard reviews and the last 3 quiz attempts.

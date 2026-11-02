@@ -7,11 +7,6 @@ const topicBodySchema = z.object({
 
 export const createTopicSchema = topicBodySchema;
 
-export const updateTopicSchema = topicBodySchema.partial().refine(
-  (data) => Object.keys(data).length > 0,
-  'At least one field is required',
-);
-
 export const subjectIdSchema = z.object({
   subjectId: z.coerce.number().int().positive(),
 });

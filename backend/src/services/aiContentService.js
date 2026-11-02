@@ -7,7 +7,7 @@ import { materialContextService } from './rag/materialContextService.js';
 // Gemini's hidden reasoning counts toward this limit, so it must leave room for a whole quiz or set of notes.
 const GENERATION_MAX_OUTPUT_TOKENS = 8192;
 
-const types = new Set(['NOTES', 'FLASHCARDS', 'QUIZ', 'MINDMAP']);
+const types = new Set(['FLASHCARDS', 'QUIZ', 'MINDMAP']);
 
 export async function findOwnedTopic(userId, topicId) {
   const topic = await prisma.topic.findFirst({

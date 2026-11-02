@@ -90,19 +90,21 @@ model User {
   cardReviews       CardReview[]
   recallReviews     RecallReview[]
   learningResources LearningResource[]
+  tutorMessages     TutorMessage[]
   documents         Document[]
   documentChunks    DocumentChunk[]
 }
 
 model Subject {
-  id        Int       @id @default(autoincrement())
+  id        Int        @id @default(autoincrement())
   userId    Int
   name      String
   examDate  DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   topics    Topic[]
+  documents Document[]
 
   @@index([userId])
 }
@@ -122,6 +124,7 @@ model Topic {
   flashcards        Flashcard[]
   recallReviews     RecallReview[]
   learningResources LearningResource[]
+  tutorMessages     TutorMessage[]
   documents         Document[]
 
   @@index([subjectId])
@@ -146,6 +149,8 @@ model StudySession {
 
   @@index([userId])
   @@index([topicId])
+  // Finding a topic's running or planned session when the Pomodoro starts.
+  @@index([userId, topicId, status])
 }
 
 model QuizResult {
@@ -161,6 +166,8 @@ model QuizResult {
 
   @@index([userId])
   @@index([topicId])
+  // Latest result and attempt count for a topic (topic page, quiz tab).
+  @@index([userId, topicId, attemptedAt])
 }
 
 model AiContent {
@@ -282,6 +289,8 @@ model Document {
   id           Int             @id @default(autoincrement())
   userId       Int
   topicId      Int?
+  // A source shared by every topic in a subject, e.g. a whole textbook. Set instead of topicId.
+  subjectId    Int?
   name         String
   type         DocumentType
   status       DocumentStatus  @default(UPLOADING)
@@ -295,10 +304,12 @@ model Document {
   updatedAt    DateTime        @updatedAt
   user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   topic        Topic?          @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  subject      Subject?        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   chunks       DocumentChunk[]
 
   @@index([userId])
   @@index([userId, topicId])
+  @@index([userId, subjectId])
   @@index([userId, status])
 }
 
@@ -316,4 +327,19 @@ model DocumentChunk {
 
   @@unique([documentId, chunkIndex])
   @@index([userId, documentId])
+}
+
+// One message in a topic's Ask AI conversation. `data` holds an answer's sources and flags.
+model TutorMessage {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  topicId   Int
+  role      String
+  content   String   @db.Text
+  data      Json?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@index([userId, topicId, createdAt])
 }

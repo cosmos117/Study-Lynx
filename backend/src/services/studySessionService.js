@@ -29,21 +29,6 @@ async function ownedTopic(userId, topicId) {
   return topic;
 }
 
-export async function listSessions(userId, from, to) {
-  const start = from || dayStart(new Date());
-  const end = to || dayEnd(start);
-  return prisma.studySession.findMany({
-    where: { userId, date: { gte: start, lt: end } },
-    orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
-    include: includeSession,
-  });
-}
-
-export async function listSessionsByRange(userId, from, to) {
-  if (!from || !to) throw createHttpError(400, 'Both from and to dates are required');
-  return listSessions(userId, from, to);
-}
-
 export async function createSession(userId, data) {
   await ownedTopic(userId, data.topicId);
   const plannedDuration = data.plannedDuration || data.duration;
@@ -53,16 +38,6 @@ export async function createSession(userId, data) {
       startTime: data.startTime || data.date,
       duration: plannedDuration, plannedDuration, technique: data.technique,
     },
-    include: includeSession,
-  });
-}
-
-export async function updateSession(userId, id, data) {
-  await ownedSession(userId, id);
-  const plannedDuration = data.plannedDuration || data.duration;
-  return prisma.studySession.update({
-    where: { id },
-    data: { ...data, ...(plannedDuration ? { plannedDuration, duration: plannedDuration } : {}) },
     include: includeSession,
   });
 }

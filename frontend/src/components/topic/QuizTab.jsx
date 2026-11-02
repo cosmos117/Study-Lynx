@@ -9,7 +9,32 @@ import useGenerate from '../../hooks/useGenerate.js';
 import { quizAPI } from '../../services/api.js';
 import { errorMessage } from '../../utils/aiErrors.js';
 
-/** A 10-question multiple-choice quiz built from the topic's sources. */
+// What a generated quiz contains. Every choice is one AI request; smaller ones generate faster.
+const QUIZ_TYPE_OPTIONS = [
+  ['all', 'All: 10 MCQs + 5 two-mark + 5 five-mark'],
+  ['mcq', 'MCQs only (10)'],
+  ['short', '2-mark questions only (5)'],
+  ['long', '5-mark questions only (5)'],
+];
+const QUIZ_TYPE_KEY = 'lynx_quiz_type';
+
+function savedQuizType() {
+  try {
+    const value = localStorage.getItem(QUIZ_TYPE_KEY);
+    return QUIZ_TYPE_OPTIONS.some(([key]) => key === value) ? value : 'all';
+  } catch {
+    return 'all';
+  }
+}
+
+const quizTitle = (content) => [
+  'Quiz',
+  content.questions?.length && `${content.questions.length} MCQs`,
+  content.shortQuestions?.length && `${content.shortQuestions.length} two-mark`,
+  content.longQuestions?.length && `${content.longQuestions.length} five-mark`,
+].filter(Boolean).join(' · ');
+
+/** A quiz built from the topic's sources: 10 MCQs, 5 two-mark and 5 five-mark questions, in one request. */
 export default function QuizTab({ topicId, hub, sourceBody, reload }) {
   const { confirm } = useFeedback();
   const [quiz, setQuiz] = useState(undefined);
@@ -18,6 +43,11 @@ export default function QuizTab({ topicId, hub, sourceBody, reload }) {
   const [attempt, setAttempt] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [quizType, setQuizType] = useState(savedQuizType);
+  const chooseType = (value) => {
+    setQuizType(value);
+    try { localStorage.setItem(QUIZ_TYPE_KEY, value); } catch { /* remembered for this visit only */ }
+  };
   const [error, setError] = useState('');
   const { running, run } = useGenerate();
   const latest = hub.practice.latest;
@@ -59,10 +89,10 @@ export default function QuizTab({ topicId, hub, sourceBody, reload }) {
   };
 
   const generate = async () => {
-    if (quiz && !await confirm({ title: 'Make a new quiz?', message: 'A new set of 10 questions will replace this one. Your past scores are kept.', confirmLabel: 'New quiz' })) return;
+    if (quiz && !await confirm({ title: 'Make a new quiz?', message: 'A new set of questions will replace this one. Your past scores are kept.', confirmLabel: 'New quiz' })) return;
     setError('');
     try {
-      await run(() => quizAPI.generate(topicId, { ...sourceBody, regenerate: Boolean(quiz) }));
+      await run(() => quizAPI.generate(topicId, { ...sourceBody, regenerate: Boolean(quiz), quizType }));
       reset();
       await load();
     } catch (requestError) {
@@ -94,10 +124,13 @@ export default function QuizTab({ topicId, hub, sourceBody, reload }) {
     <div className="lynx-stack-tight">
       <Card className="lynx-row-between lynx-topic-toolbar">
         <div>
-          <h2 className="lynx-h2">Quiz · 10 questions</h2>
+          <h2 className="lynx-h2">{quiz ? quizTitle(quiz.content || quiz) : 'Quiz'}</h2>
           <p className="lynx-muted lynx-caption">{latest ? `Last score ${latest.score}/${latest.total} · ${hub.practice.attempts} attempt${hub.practice.attempts === 1 ? '' : 's'}` : 'Test yourself, then read the explanation for every answer.'}</p>
         </div>
         <div className="lynx-hub-actions">
+          <select value={quizType} onChange={(event) => chooseType(event.target.value)} disabled={running} className="lynx-input lynx-quiz-type" aria-label="Quiz type">
+            {QUIZ_TYPE_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
           {quiz && (
             <button type="button" disabled={clearing || running} onClick={clear} className="lynx-btn lynx-btn-ghost">
               {clearing ? 'Clearing…' : 'Clear'}
@@ -112,7 +145,7 @@ export default function QuizTab({ topicId, hub, sourceBody, reload }) {
       <Card className="lynx-study-card">
         {quiz
           ? <QuizView key={attempt} quiz={quiz} answers={answers} setAnswers={setAnswers} submit={submit} submitting={submitting} result={result} onRetry={reset} />
-          : <EmptyState title="No quiz yet" description={sourceBody.documentIds.length ? 'Generate 10 questions from your sources.' : 'Add a source first for better questions, or generate from the topic name.'} />}
+          : <EmptyState title="No quiz yet" description={sourceBody.documentIds.length ? 'Generate 10 MCQs, 5 two-mark and 5 five-mark questions from your sources.' : 'Add a source first for better questions, or generate from the topic name.'} />}
       </Card>
     </div>
   );

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFeedback } from '../Feedback.jsx';
+import FlipCard from '../FlipCard.jsx';
 import { flashcardAPI } from '../../services/api.js';
 import { errorMessage } from '../../utils/aiErrors.js';
 
@@ -46,11 +47,7 @@ export default function FlashcardDeck({ cards }) {
   return (
     <div>
       <p className="lynx-eyebrow">AI-generated. Verify important facts.</p>
-      <button type="button" className={`lynx-flip-card ${flipped ? 'lynx-flip-card-flipped' : ''}`} onClick={() => setFlipped((value) => !value)} aria-live="polite">
-        <span className="sr-only">{flipped ? 'Answer: ' : 'Question: '}</span>
-        <span className="lynx-flip-card-face">{flipped ? card.answer : card.question}</span>
-        <span className="sr-only"> Press to {flipped ? 'show the question' : 'reveal the answer'}.</span>
-      </button>
+      <FlipCard key={card.id} question={card.question} answer={card.answer} flipped={flipped} onFlip={() => setFlipped((value) => !value)} />
       {flipped && (
         <div className="lynx-rating-grid lynx-section-gap" role="group" aria-label="How well did you remember it?">
           {RATINGS.map((rating, index) => (

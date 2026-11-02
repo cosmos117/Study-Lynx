@@ -14,6 +14,5 @@ prisma/*.db
 prisma/*.db-journal
 
 # Local-only files
-abc.exe
 .vscode/
 backend/uploads/

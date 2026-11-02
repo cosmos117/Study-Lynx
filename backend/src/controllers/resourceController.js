@@ -1,9 +1,5 @@
 import * as resources from '../services/resourceService.js';
 
-export async function list(request, response) {
-  response.json({ success: true, data: { resources: await resources.listResources(request.user.id, request.query.topicId) } });
-}
-
 export async function get(request, response) {
   response.json({ success: true, data: { resource: await resources.getResource(request.user.id, request.params.id) } });
 }

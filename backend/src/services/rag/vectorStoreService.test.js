@@ -130,6 +130,12 @@ describe('memory vector store', () => {
 describe('mysql vector store (query scoping)', () => {
   const embedding = createLocalEmbeddingService({ dimension: 32 });
 
+  // Which topics each subject has, for the store's "shared by this topic's subject" clause.
+  const subjectTopics = { 50: [11, 12], 60: [13] };
+  const matchesOwner = (item, clause) => (clause.topicId
+    ? item.topicId === clause.topicId
+    : Boolean(subjectTopics[item.subjectId]?.includes(clause.subject.topics.some.id)));
+
   /** Fake Prisma that stores rows and honours the where-clause the store builds. */
   function createFakePrisma({ documents }) {
     const chunks = [];
@@ -148,7 +154,15 @@ describe('mysql vector store (query scoping)', () => {
     };
     return {
       chunks,
-      document: { findFirst: async ({ where }) => documents.find((item) => item.id === where.id && item.userId === where.userId) || null },
+      documents,
+      document: {
+        findFirst: async ({ where }) => documents.find((item) => item.id === where.id && item.userId === where.userId) || null,
+        findMany: vi.fn(async ({ where }) => documents
+          .filter((item) => item.userId === where.userId && item.status === where.status
+            && (!where.id?.in || where.id.in.includes(item.id))
+            && (!where.OR || where.OR.some((clause) => matchesOwner(item, clause))))
+          .map(({ id, name, updatedAt }) => ({ id, name, updatedAt }))),
+      },
       documentChunk: {
         create: async ({ data }) => { chunks.push({ ...data }); return data; },
         findMany: vi.fn(async ({ where }) => chunks.filter((chunk) => inScope(chunk, where)).map((chunk) => ({
@@ -164,17 +178,19 @@ describe('mysql vector store (query scoping)', () => {
     };
   }
 
+  const updatedAt = new Date('2026-11-01T10:00:00Z');
   const documents = [
-    { id: 1, userId: 1, name: 'A.pdf', status: 'READY', topicId: 10 },
-    { id: 2, userId: 1, name: 'B.pdf', status: 'READY', topicId: 11 },
-    { id: 3, userId: 2, name: 'C.pdf', status: 'READY', topicId: 10 },
-    { id: 4, userId: 1, name: 'Pending.pdf', status: 'PROCESSING', topicId: 10 },
+    { id: 1, userId: 1, name: 'A.pdf', status: 'READY', topicId: 10, updatedAt },
+    { id: 2, userId: 1, name: 'B.pdf', status: 'READY', topicId: 11, updatedAt },
+    { id: 3, userId: 2, name: 'C.pdf', status: 'READY', topicId: 10, updatedAt },
+    { id: 4, userId: 1, name: 'Pending.pdf', status: 'PROCESSING', topicId: 10, updatedAt },
   ];
 
-  async function seeded() {
-    const prisma = createFakePrisma({ documents: documents.map((document) => ({ ...document })) });
+  async function seeded(extra = []) {
+    const rows = [...documents, ...extra];
+    const prisma = createFakePrisma({ documents: rows.map((document) => ({ ...document })) });
     const store = createMysqlVectorStoreService({ prisma, embeddingService: embedding });
-    for (const document of documents) {
+    for (const document of rows) {
       await store.addChunks(document.id, document.userId, [{ chunkIndex: 0, content: 'shared database normalization text' }]);
     }
     return { prisma, store };
@@ -191,9 +207,9 @@ describe('mysql vector store (query scoping)', () => {
     const results = await store.similaritySearch({ userId: 1, queryEmbedding: await query(), topK: 10, threshold: 0 });
 
     expect(results.map((chunk) => chunk.documentName).sort()).toEqual(['A.pdf', 'B.pdf']);
-    const { where } = prisma.documentChunk.findMany.mock.calls[0][0];
-    expect(where.userId).toBe(1);
-    expect(where.document.userId).toBe(1);
+    const documentQuery = prisma.document.findMany.mock.calls[0][0].where;
+    expect(documentQuery).toMatchObject({ userId: 1, status: 'READY' });
+    expect(prisma.documentChunk.findMany.mock.calls[0][0].where.userId).toBe(1);
     expect(results.every((chunk) => chunk.embedding === undefined)).toBe(true);
   });
 
@@ -204,6 +220,21 @@ describe('mysql vector store (query scoping)', () => {
     expect(byDocument.map((chunk) => chunk.documentName)).toEqual(['B.pdf']);
     const byTopic = await store.similaritySearch({ userId: 1, queryEmbedding, topK: 10, threshold: 0, topicId: 11 });
     expect(byTopic.map((chunk) => chunk.documentName)).toEqual(['B.pdf']);
+  });
+
+  it('searches a topic\'s own sources and those shared by its subject, and no other subject\'s', async () => {
+    const { store } = await seeded([
+      { id: 5, userId: 1, name: 'Textbook.pdf', status: 'READY', subjectId: 50, updatedAt },
+      { id: 6, userId: 1, name: 'Other subject.pdf', status: 'READY', subjectId: 60, updatedAt },
+      { id: 7, userId: 2, name: 'Someone else.pdf', status: 'READY', subjectId: 50, updatedAt },
+    ]);
+    const queryEmbedding = await query();
+    const search = async (topicId) => (await store.similaritySearch({ userId: 1, queryEmbedding, topK: 10, threshold: 0, topicId }))
+      .map((chunk) => chunk.documentName).sort();
+
+    expect(await search(11)).toEqual(['B.pdf', 'Textbook.pdf']);
+    expect(await search(12)).toEqual(['Textbook.pdf']);
+    expect(await search(13)).toEqual(['Other subject.pdf']);
   });
 
   it('refuses to write chunks into a document the user does not own', async () => {
@@ -223,5 +254,31 @@ describe('mysql vector store (query scoping)', () => {
   it('fails closed without a userId', async () => {
     const { store } = await seeded();
     await expect(store.similaritySearch({ queryEmbedding: await query(), topK: 5 })).rejects.toThrow(/userId/);
+  });
+
+  it('keeps chunks in memory between questions, so a repeat search reads no embeddings', async () => {
+    const { prisma, store } = await seeded();
+    const queryEmbedding = await query();
+    await store.similaritySearch({ userId: 1, queryEmbedding, topK: 10, threshold: 0 });
+    const loads = prisma.documentChunk.findMany.mock.calls.length;
+    const again = await store.similaritySearch({ userId: 1, queryEmbedding, topK: 10, threshold: 0 });
+    expect(prisma.documentChunk.findMany.mock.calls.length).toBe(loads);
+    expect(again.map((chunk) => chunk.documentName).sort()).toEqual(['A.pdf', 'B.pdf']);
+  });
+
+  it('reloads a document whose content changed, and forgets a deleted one', async () => {
+    const { prisma, store } = await seeded();
+    const queryEmbedding = await query();
+    await store.similaritySearch({ userId: 1, queryEmbedding, topK: 10, threshold: 0 });
+    const loads = prisma.documentChunk.findMany.mock.calls.length;
+
+    prisma.documents.find((item) => item.id === 1).updatedAt = new Date('2026-11-02T10:00:00Z');
+    await store.similaritySearch({ userId: 1, queryEmbedding, topK: 10, threshold: 0 });
+    expect(prisma.documentChunk.findMany.mock.calls.length).toBe(loads + 1);
+    expect(prisma.documentChunk.findMany.mock.calls.at(-1)[0].where.documentId.in).toEqual([1]);
+
+    await store.removeDocument(2, 1);
+    const afterDelete = await store.similaritySearch({ userId: 1, queryEmbedding, topK: 10, threshold: 0, documentIds: [2] });
+    expect(afterDelete).toEqual([]);
   });
 });

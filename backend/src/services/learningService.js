@@ -1,7 +1,7 @@
 import prisma from '../config/prisma.js';
 import { createHttpError } from '../utils/httpError.js';
 import { findOwnedTopic, getOrGenerate } from './aiContentService.js';
-import { featureDefinitions, notesToText } from './ai/features.js';
+import { featureDefinitions, quizFeature } from './ai/features.js';
 import { reviewCard } from './sm2.js';
 
 async function ownedCard(userId, id) {
@@ -12,11 +12,8 @@ async function ownedCard(userId, id) {
 
 export async function getNotes(userId, topicId) {
   await findOwnedTopic(userId, topicId);
-  const [note, content] = await Promise.all([
-    prisma.note.findUnique({ where: { userId_topicId: { userId, topicId } } }),
-    prisma.aiContent.findUnique({ where: { userId_topicId_type: { userId, topicId, type: 'NOTES' } } }),
-  ]);
-  return { note, aiContent: content };
+  const note = await prisma.note.findUnique({ where: { userId_topicId: { userId, topicId } } });
+  return { note };
 }
 
 export async function saveNote(userId, topicId, content) {
@@ -28,32 +25,9 @@ export async function saveNote(userId, topicId, content) {
   });
 }
 
-export async function generateNotes(userId, topicId, regenerate, sources) {
-  const result = await getOrGenerate({ userId, topicId, type: 'NOTES', regenerate, sources, feature: featureDefinitions.NOTES });
-  return { ...result, text: notesToText(result.content) };
-}
-
 export async function listFlashcards(userId, topicId) {
   await findOwnedTopic(userId, topicId);
   return prisma.flashcard.findMany({ where: { userId, topicId }, include: { review: true }, orderBy: { createdAt: 'asc' } });
-}
-
-export async function createFlashcard(userId, topicId, data) {
-  await findOwnedTopic(userId, topicId);
-  return prisma.flashcard.create({
-    data: { ...data, userId, topicId, source: 'USER', review: { create: { userId, dueAt: new Date() } } },
-    include: { review: true },
-  });
-}
-
-export async function updateFlashcard(userId, id, data) {
-  await ownedCard(userId, id);
-  return prisma.flashcard.update({ where: { id }, data, include: { review: true } });
-}
-
-export async function deleteFlashcard(userId, id) {
-  await ownedCard(userId, id);
-  await prisma.flashcard.delete({ where: { id } });
 }
 
 export async function reviewFlashcard(userId, id, rating) {
@@ -69,13 +43,6 @@ export async function reviewFlashcard(userId, id, rating) {
 
 /** Cards that are due for review now (the single definition of "due"). */
 export const dueCardsWhere = (userId, topicId) => ({ userId, dueAt: { lte: new Date() }, ...(topicId ? { flashcard: { topicId } } : {}) });
-
-export async function dueFlashcards(userId, topicId, limit = 20) {
-  const where = dueCardsWhere(userId, topicId);
-  return prisma.cardReview.findMany({
-    where, take: limit, include: { flashcard: { include: { topic: { select: { id: true, name: true, subject: { select: { name: true } } } } } } }, orderBy: { dueAt: 'asc' },
-  });
-}
 
 /** How many cards are due now, for the sidebar badge. A single COUNT query, cheap enough for every page. */
 export function countDueFlashcards(userId) {
@@ -186,8 +153,10 @@ function shuffledQuiz(content) {
   return questions;
 }
 
-export async function generateQuiz(userId, topicId, regenerate, sources) {
-  const content = await getOrGenerate({ userId, topicId, type: 'QUIZ', regenerate, sources, feature: featureDefinitions.QUIZ });
+export async function generateQuiz(userId, topicId, regenerate, sources, quizType = 'all') {
+  const content = await getOrGenerate({ userId, topicId, type: 'QUIZ', regenerate, sources, feature: quizFeature(quizType) });
+  // Only multiple-choice questions have options to shuffle; written-only quizzes are stored as they are.
+  if (!content.content?.questions?.length) return content;
   const quiz = { ...content, content: { ...content.content, questions: shuffledQuiz(content.content) } };
   return prisma.aiContent.update({ where: { id: content.id }, data: { content: quiz.content } });
 }

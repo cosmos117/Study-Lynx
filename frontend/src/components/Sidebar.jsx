@@ -1,19 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { flashcardAPI } from '../services/api.js';
 
-// Three places to go: Home for today, Subjects for studying a topic, Review for due flashcards.
+// Home for today, Subjects for studying a topic, Review for due flashcards, Guide for how it all works.
 // `prefixes` keeps an item highlighted on all of its pages, e.g. a topic page lives under Subjects.
 const navigation = [
   { to: '/dashboard', label: 'Home', icon: '⌂', prefixes: ['/dashboard'] },
   { to: '/subjects', label: 'Subjects', icon: '▦', prefixes: ['/subjects', '/topics'] },
   { to: '/recall', label: 'Review', icon: '↻', prefixes: ['/recall'], badge: 'due' },
+  { to: '/guide', label: 'Guide', icon: '?', prefixes: ['/guide'] },
 ];
 const settings = { to: '/settings', label: 'Settings', icon: '⚙', prefixes: ['/settings'] };
 
 const isActive = (pathname, prefixes) => prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
 const COLLAPSED_KEY = 'lynx_sidebar_collapsed';
+const DUE_REFRESH_MS = 60 * 1000;
 
 function readCollapsed() {
   try { return localStorage.getItem(COLLAPSED_KEY) === '1'; } catch { return false; }
@@ -25,10 +27,26 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [dueCount, setDueCount] = useState(0);
 
-  // Refresh the due-card badge on every page change, so it drops as cards are reviewed.
-  useEffect(() => {
+  // The due-card badge: loaded when the sidebar appears, then refreshed after leaving a topic page
+  // (where cards are rated), when the tab regains focus, and otherwise at most once a minute.
+  const lastLoaded = useRef(0);
+  const previousPath = useRef(pathname);
+  const loadDueCount = useCallback(() => {
+    lastLoaded.current = Date.now();
     flashcardAPI.dueCount().then(({ data }) => setDueCount(data.data.count)).catch(() => {});
-  }, [pathname]);
+  }, []);
+
+  useEffect(() => {
+    const leftTopic = previousPath.current.startsWith('/topics/') && previousPath.current !== pathname;
+    previousPath.current = pathname;
+    if (!lastLoaded.current || leftTopic || Date.now() - lastLoaded.current > DUE_REFRESH_MS) loadDueCount();
+  }, [pathname, loadDueCount]);
+
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') loadDueCount(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [loadDueCount]);
 
   const toggle = () => {
     setCollapsed((value) => {

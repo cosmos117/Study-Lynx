@@ -1,35 +1,73 @@
 import { describe, expect, it } from 'vitest';
-import { featureDefinitions } from './features.js';
+import { featureDefinitions, quizFeature } from './features.js';
 
 const context = { topicName: 'Normalization', subjectName: 'Databases', examName: 'DBMS Finals', topicDifficulty: 'MEDIUM' };
 
 describe('feature prompts', () => {
   it.each([
-    ['NOTES', ['"title"', '"keyConcepts"', '"quickRevision"']],
     ['FLASHCARDS', ['"cards"', '"question"', '"answer"']],
-    ['QUIZ', ['"questions"', '"options"', '"correctIndex"', '"explanation"']],
+    ['QUIZ', ['"questions"', '"options"', '"correctIndex"', '"explanation"', '"shortQuestions"', '"longQuestions"', '"answer"']],
     ['MINDMAP', ['"label"', '"children"']],
   ])('%s tells the model the exact JSON keys it must return', (type, keys) => {
     const text = featureDefinitions[type].buildPrompt(context);
     for (const key of keys) expect(text).toContain(key);
   });
 
-  it('accepts a quiz in the structure the prompt asks for', () => {
-    const quiz = {
-      questions: Array.from({ length: 10 }, (_, index) => ({
-        question: `Question ${index + 1}?`,
-        options: ['A', 'B', 'C', 'D'],
-        correctIndex: index % 4,
-        explanation: 'Because.',
-      })),
-    };
-    expect(featureDefinitions.QUIZ.schema.safeParse(quiz).success).toBe(true);
+  const mcq = (index) => ({ question: `Question ${index + 1}?`, options: ['A', 'B', 'C', 'D'], correctIndex: index % 4, explanation: 'Because.' });
+  const written = (label, index) => ({ question: `${label} question ${index + 1}?`, answer: `Model answer for ${label} ${index + 1}.` });
+  const quizWith = ({ mcqs = 10, short = 5, long = 5 } = {}) => ({
+    questions: Array.from({ length: mcqs }, (_, i) => mcq(i)),
+    shortQuestions: Array.from({ length: short }, (_, i) => written('Two-mark', i)),
+    longQuestions: Array.from({ length: long }, (_, i) => written('Five-mark', i)),
+  });
+
+  it('accepts a quiz in the structure the prompt asks for: 10 MCQs, 5 two-mark and 5 five-mark questions', () => {
+    expect(featureDefinitions.QUIZ.schema.safeParse(quizWith()).success).toBe(true);
   });
 
   it('rejects a quiz that does not have exactly 10 questions', () => {
-    const question = (index) => ({ question: `Question ${index}?`, options: ['A', 'B', 'C', 'D'], correctIndex: 0, explanation: 'Because.' });
-    expect(featureDefinitions.QUIZ.schema.safeParse({ questions: Array.from({ length: 9 }, (_, i) => question(i)) }).success).toBe(false);
-    expect(featureDefinitions.QUIZ.schema.safeParse({ questions: Array.from({ length: 11 }, (_, i) => question(i)) }).success).toBe(false);
+    expect(featureDefinitions.QUIZ.schema.safeParse(quizWith({ mcqs: 9 })).success).toBe(false);
+    expect(featureDefinitions.QUIZ.schema.safeParse(quizWith({ mcqs: 11 })).success).toBe(false);
+  });
+
+  it('needs exactly 5 two-mark and 5 five-mark questions, each with a model answer', () => {
+    expect(featureDefinitions.QUIZ.schema.safeParse(quizWith({ short: 4 })).success).toBe(false);
+    expect(featureDefinitions.QUIZ.schema.safeParse(quizWith({ long: 6 })).success).toBe(false);
+    const missingAnswer = quizWith();
+    delete missingAnswer.longQuestions[0].answer;
+    expect(featureDefinitions.QUIZ.schema.safeParse(missingAnswer).success).toBe(false);
+  });
+
+  it('rejects the same question appearing twice across sections', () => {
+    const quiz = quizWith();
+    quiz.longQuestions[0].question = quiz.shortQuestions[0].question;
+    expect(featureDefinitions.QUIZ.schema.safeParse(quiz).success).toBe(false);
+  });
+
+  it.each([
+    ['mcq', { questions: 10 }, '10 multiple-choice questions', ['shortQuestions', 'longQuestions']],
+    ['short', { shortQuestions: 5 }, '5 two-mark questions', ['questions', 'longQuestions']],
+    ['long', { longQuestions: 5 }, '5 five-mark questions', ['questions', 'shortQuestions']],
+  ])('a "%s" quiz asks for and accepts only that section', (type, sections, asked, absent) => {
+    const feature = quizFeature(type);
+    const text = feature.buildPrompt({ topicName: 'Normalization', subjectName: 'Databases', topicDifficulty: 'AVERAGE' });
+    expect(text).toContain(asked);
+    for (const key of absent) expect(text).not.toContain(`"${key}"`);
+
+    const quiz = {};
+    if (sections.questions) quiz.questions = Array.from({ length: 10 }, (_, i) => mcq(i));
+    if (sections.shortQuestions) quiz.shortQuestions = Array.from({ length: 5 }, (_, i) => written('Two-mark', i));
+    if (sections.longQuestions) quiz.longQuestions = Array.from({ length: 5 }, (_, i) => written('Five-mark', i));
+    expect(feature.schema.safeParse(quiz).success).toBe(true);
+  });
+
+  it('falls back to the full quiz for an unknown type', () => {
+    expect(quizFeature('nonsense').promptVersion).toBe(quizFeature('all').promptVersion);
+  });
+
+  it('asks for all three sections in a single request', () => {
+    const text = featureDefinitions.QUIZ.buildPrompt({ topicName: 'Normalization', subjectName: 'Databases', topicDifficulty: 'AVERAGE' });
+    expect(text).toContain('10 multiple-choice questions, 5 two-mark questions and 5 five-mark questions');
   });
 
   it('rejects a bare list of questions, which is what a model returns without a shape', () => {

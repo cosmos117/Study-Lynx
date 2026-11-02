@@ -49,7 +49,6 @@ describe('topics are reached through an owned subject', () => {
   });
 
   it.each([
-    ['update', () => topics.updateTopic(7, 5, { name: 'X' }), () => db.topic.update],
     ['delete', () => topics.deleteTopic(7, 5), () => db.topic.delete],
   ])("refuses to %s a topic in another user's subject", async (_name, run, write) => {
     db.topic.findFirst.mockResolvedValue(null);

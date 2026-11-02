@@ -56,16 +56,6 @@ export async function createYoutubeResource(userId, data) {
   });
 }
 
-export async function listResources(userId, topicId) {
-  if (topicId) await findOwnedTopic(userId, topicId);
-  const resources = await prisma.learningResource.findMany({
-    where: { userId, ...(topicId ? { topicId } : {}) },
-    orderBy: { createdAt: 'desc' },
-    include: includeResource,
-  });
-  return resources.map(withVideoId);
-}
-
 export async function getResource(userId, id) {
   const resource = await prisma.learningResource.findFirst({ where: { id, userId }, include: includeResource });
   if (!resource) throw createHttpError(404, 'Learning resource not found');

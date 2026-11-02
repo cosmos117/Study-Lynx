@@ -10,6 +10,9 @@ import {
 } from '../utils/pomodoro.js';
 
 const PomodoroContext = createContext(null);
+// The countdown changes every second, so it has its own context: only the timer widget re-renders
+// each tick, not every page that just needs to know whether a timer is running.
+const PomodoroClockContext = createContext({ remaining: 0, clock: '00:00' });
 const TITLE_PREFIX = /^⏱ \d{2}:\d{2} · /;
 
 /**
@@ -116,10 +119,20 @@ export function PomodoroProvider({ children }) {
   }, []);
 
   const value = useMemo(() => ({
-    ...state, paused: isPaused(state), remaining, clock, settings, start, stop, pause, resume, setSettings,
-  }), [state, remaining, clock, settings, start, stop, pause, resume, setSettings]);
+    ...state, paused: isPaused(state), settings, start, stop, pause, resume, setSettings,
+  }), [state, settings, start, stop, pause, resume, setSettings]);
+  const clockValue = useMemo(() => ({ remaining, clock }), [remaining, clock]);
 
-  return <PomodoroContext.Provider value={value}>{children}</PomodoroContext.Provider>;
+  return (
+    <PomodoroContext.Provider value={value}>
+      <PomodoroClockContext.Provider value={clockValue}>{children}</PomodoroClockContext.Provider>
+    </PomodoroContext.Provider>
+  );
+}
+
+/** The live countdown: { remaining (ms), clock ('mm:ss') }. Re-renders every second while running. */
+export function usePomodoroClock() {
+  return useContext(PomodoroClockContext);
 }
 
 export function usePomodoro() {

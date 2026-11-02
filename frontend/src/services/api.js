@@ -97,6 +97,8 @@ export const insightsAPI = {
 
 export const tutorAPI = {
   ask: (payload) => api.post('/ai-tutor/ask', payload),
+  history: (topicId) => api.get('/ai-tutor/history', { params: { topicId } }),
+  clearHistory: (topicId) => api.delete('/ai-tutor/history', { params: { topicId } }),
 };
 
 export default api;

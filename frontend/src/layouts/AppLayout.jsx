@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import BrandMark from '../components/BrandMark.jsx';
 import ThemeToggle from '../components/ThemeToggle.jsx';
+import LoadingSpinner from '../components/LoadingSpinner.jsx';
 import Sidebar from '../components/Sidebar.jsx';
 
 export default function AppLayout() {
@@ -40,7 +41,10 @@ export default function AppLayout() {
       <div className="lynx-shell">
         <Sidebar />
         <main id="main" ref={main} tabIndex={-1} className="lynx-main">
-          <Outlet />
+          {/* Pages load on first visit; the header and sidebar stay in place meanwhile. */}
+          <Suspense fallback={<LoadingSpinner />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
     </div>
