@@ -64,6 +64,18 @@ export async function skipSession(userId, id) {
   return prisma.studySession.update({ where: { id }, data: { status: 'SKIPPED' }, include: includeSession });
 }
 
+/** A focus block started without choosing a topic. It runs straight away and counts toward the streak. */
+export async function startFocus(userId, { plannedDuration = 25, technique = 'POMODORO' } = {}) {
+  const now = new Date();
+  return prisma.studySession.create({
+    data: {
+      userId, topicId: null, date: now, startTime: now, status: 'IN_PROGRESS',
+      duration: plannedDuration, plannedDuration, technique,
+    },
+    include: includeSession,
+  });
+}
+
 /**
  * "Study now" for a topic: resume the session already in progress, otherwise start today's
  * planned session for the topic, otherwise create and start a new one.

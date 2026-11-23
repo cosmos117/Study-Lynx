@@ -133,7 +133,8 @@ model Topic {
 model StudySession {
   id              Int                @id @default(autoincrement())
   userId          Int
-  topicId         Int
+  // Empty for a focus block started without choosing a topic; it still counts toward the streak.
+  topicId         Int?
   date            DateTime
   duration        Int
   startTime       DateTime?
@@ -145,7 +146,7 @@ model StudySession {
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
   user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topic           Topic              @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  topic           Topic?             @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([topicId])

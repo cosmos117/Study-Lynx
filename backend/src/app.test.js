@@ -174,16 +174,16 @@ describe('app wiring', () => {
 
   it('accepts pasted notes longer than the default 100 KB body limit', async () => {
     const headers = { ...auth(), 'Content-Type': 'application/json' };
-    // No topic or subject, so validation answers before the database is touched.
+    // No subject, so validation answers before the database is touched.
     const body = JSON.stringify({ name: 'Long notes', type: 'NOTE', text: 'word '.repeat(30000) });
     const response = await fetch(`${base}/api/documents/text`, { method: 'POST', headers, body });
     expect(response.status).toBe(400);
-    expect((await response.json()).message).toMatch(/topic or a subject/);
+    expect((await response.json()).message).toMatch(/subject/);
   });
 
   it('explains when pasted notes are over the character limit', async () => {
     const headers = { ...auth(), 'Content-Type': 'application/json' };
-    const body = JSON.stringify({ topicId: 1, name: 'Too long', type: 'NOTE', text: 'x'.repeat(env.rag.maxDocumentChars + 1) });
+    const body = JSON.stringify({ subjectId: 1, name: 'Too long', type: 'NOTE', text: 'x'.repeat(env.rag.maxDocumentChars + 1) });
     const response = await fetch(`${base}/api/documents/text`, { method: 'POST', headers, body });
     expect(response.status).toBe(400);
     expect((await response.json()).message).toMatch(/too long/i);

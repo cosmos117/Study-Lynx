@@ -36,7 +36,7 @@ export const env = {
     timeoutMs: readNumber('AI_TIMEOUT_MS', 30000, { integer: true, min: 1 }),
     maxRetries: readNumber('AI_MAX_RETRIES', 3, { integer: true, min: 0 }),
     dailyLimit: readNumber('AI_DAILY_LIMIT', null, { integer: true, min: 1 }),
-    userDailyLimit: readNumber('AI_USER_DAILY_LIMIT', 15, { integer: true, min: 1 }),
+    userDailyLimit: readNumber('AI_USER_DAILY_LIMIT', 30, { integer: true, min: 1 }),
     // Shared by everyone: keep just under the provider's requests-per-minute quota (Gemini free
     // tier Flash-Lite: 15). Requests beyond it wait briefly for a slot instead of being rejected.
     requestsPerMinute: readNumber('AI_REQUESTS_PER_MINUTE', 14, { integer: true, min: 1 }),

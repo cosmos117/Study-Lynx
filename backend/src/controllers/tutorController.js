@@ -3,15 +3,17 @@ import { ragService } from '../services/rag/ragService.js';
 import { tutorHistoryService } from '../services/rag/tutorHistoryService.js';
 
 /**
- * Answers a question from the student's sources. With a topic, the answer also uses the topic's
- * recent conversation (so follow-ups work) and the question and answer are saved to it.
+ * Answers a question from the student's sources, or from general knowledge when none cover it.
+ * With a topic, the answer also uses the topic's recent conversation (so follow-ups work) and the
+ * question and answer are saved to it.
  */
 export async function ask(request, response) {
   const userId = request.user.id;
   const { topicId, question, mode } = request.body;
-  if (topicId) await findOwnedTopic(userId, topicId);
+  const topic = topicId ? await findOwnedTopic(userId, topicId) : null;
   const history = topicId ? await tutorHistoryService.recent(userId, topicId) : [];
-  const result = await ragService.ask({ userId, ...request.body, history });
+  const context = topic ? { topicName: topic.name, subjectName: topic.subject?.name } : {};
+  const result = await ragService.ask({ userId, ...request.body, history, context });
   const ids = topicId ? await tutorHistoryService.saveTurn(userId, topicId, { question, mode, answer: result }) : {};
   response.json({ success: true, data: { ...result, ...ids } });
 }

@@ -6,25 +6,28 @@ export const TUTOR_MODES = ['ask', 'simpler', 'example', 'quiz', 'flashcards'];
 const id = z.coerce.number().int().positive();
 
 export const documentIdSchema = z.object({ id });
-// A source belongs to one topic, or is shared by a whole subject: exactly one of the two.
-// Without either it would be shown nowhere and could never be deleted.
-const oneOwner = (value) => Boolean(value.topicId) !== Boolean(value.subjectId);
-const ONE_OWNER_MESSAGE = 'A source belongs to either a topic or a subject';
+// Sources belong to a subject, and every topic in it uses them. A topic-only source is refused
+// rather than silently saved without its owner.
+const SUBJECT_REQUIRED = 'Add sources to a subject; every topic in it can then use them.';
+const subjectOwner = {
+  subjectId: z.coerce.number({ required_error: SUBJECT_REQUIRED, invalid_type_error: SUBJECT_REQUIRED }).int().positive(),
+  topicId: z.unknown().optional(),
+};
+// Checked after the fields, so a topic-only request gets the message once, not once per field.
+const noTopic = [(value) => value.topicId === undefined, { message: SUBJECT_REQUIRED, path: ['topicId'] }];
 const maxChars = env.rag.maxDocumentChars;
 
 export const documentUploadSchema = z.object({
-  topicId: id.optional(),
-  subjectId: id.optional(),
+  ...subjectOwner,
   name: z.string().trim().min(1).max(190).optional(),
-}).refine(oneOwner, ONE_OWNER_MESSAGE);
+}).refine(...noTopic);
 export const documentTextSchema = z.object({
-  topicId: id.optional(),
-  subjectId: id.optional(),
+  ...subjectOwner,
   name: z.string().trim().min(1).max(190),
   type: z.enum(['NOTE', 'YOUTUBE']),
   text: z.string().trim().min(1).max(maxChars, `This is too long (limit ${maxChars.toLocaleString('en-US')} characters). Split it into smaller parts.`),
   sourceUrl: z.string().url().max(2048).optional(),
-}).refine(oneOwner, ONE_OWNER_MESSAGE);
+}).refine(...noTopic);
 
 // Models often send null for an optional field they have nothing for; treat it as left out.
 const orDefault = (schema, fallback) => z.preprocess((value) => value ?? undefined, schema.default(fallback));

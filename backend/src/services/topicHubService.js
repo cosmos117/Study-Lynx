@@ -13,7 +13,7 @@ export function createTopicHubService({ db = prisma, ownedTopic = findOwnedTopic
     const topic = await ownedTopic(userId, topicId);
 
     const [documents, videos, transcriptRows, cardsTotal, cardsDue, latestResult, attempts] = await Promise.all([
-      // The topic's own sources, then those shared by its subject.
+      // The subject's sources (and any topic-only ones saved before sources moved to subjects).
       db.document.findMany({
         where: { userId, OR: [{ topicId }, { subjectId: topic.subject.id }] },
         select: { id: true, subjectId: true, name: true, type: true, status: true, pageCount: true, errorMessage: true, sourceUrl: true, _count: { select: { chunks: true } } },
