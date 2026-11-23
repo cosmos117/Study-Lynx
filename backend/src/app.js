@@ -19,6 +19,8 @@ const app = express();
 
 app.use(helmet());
 app.use(cors({ origin: env.corsOrigin }));
+// Pasted notes may be as long as an indexed document; a character can take up to 4 bytes.
+app.use('/api/documents/text', express.json({ limit: env.rag.maxDocumentChars * 4 }));
 app.use(express.json());
 
 app.get('/api/health', (_request, response) => {

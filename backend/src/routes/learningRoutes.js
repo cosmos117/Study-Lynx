@@ -10,7 +10,7 @@ import {
 } from '../schemas/aiSchemas.js';
 
 const router = Router();
-router.use(authMiddleware);
+router.use(['/ai', '/recall', '/topics', '/flashcards'], authMiddleware);
 router.get('/ai/usage', asyncHandler(usage));
 router.get('/recall/summary', asyncHandler(recall.summary));
 const topic = [validate(topicAiParamsSchema, 'params')];

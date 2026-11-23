@@ -6,9 +6,11 @@ export const TUTOR_MODES = ['ask', 'simpler', 'example', 'quiz', 'flashcards'];
 const id = z.coerce.number().int().positive();
 
 export const documentIdSchema = z.object({ id });
-// A source belongs to one topic, or is shared by a whole subject; never both.
-const oneOwner = (value) => !(value.topicId && value.subjectId);
+// A source belongs to one topic, or is shared by a whole subject: exactly one of the two.
+// Without either it would be shown nowhere and could never be deleted.
+const oneOwner = (value) => Boolean(value.topicId) !== Boolean(value.subjectId);
 const ONE_OWNER_MESSAGE = 'A source belongs to either a topic or a subject';
+const maxChars = env.rag.maxDocumentChars;
 
 export const documentUploadSchema = z.object({
   topicId: id.optional(),
@@ -20,7 +22,7 @@ export const documentTextSchema = z.object({
   subjectId: id.optional(),
   name: z.string().trim().min(1).max(190),
   type: z.enum(['NOTE', 'YOUTUBE']),
-  text: z.string().trim().min(1).max(env.rag.maxDocumentChars),
+  text: z.string().trim().min(1).max(maxChars, `This is too long (limit ${maxChars.toLocaleString('en-US')} characters). Split it into smaller parts.`),
   sourceUrl: z.string().url().max(2048).optional(),
 }).refine(oneOwner, ONE_OWNER_MESSAGE);
 

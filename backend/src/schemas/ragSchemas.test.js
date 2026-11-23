@@ -4,10 +4,14 @@ import { documentTextSchema, documentUploadSchema } from './ragSchemas.js';
 describe('source ownership', () => {
   const text = { name: 'Textbook', type: 'NOTE', text: 'Some notes' };
 
-  it('accepts a topic, a subject, or neither', () => {
+  it('accepts a topic or a subject', () => {
     expect(documentTextSchema.safeParse({ ...text, topicId: 1 }).success).toBe(true);
     expect(documentTextSchema.safeParse({ ...text, subjectId: 1 }).success).toBe(true);
-    expect(documentTextSchema.safeParse(text).success).toBe(true);
+  });
+
+  it('rejects a source with no owner, which would be shown nowhere', () => {
+    expect(documentTextSchema.safeParse(text).success).toBe(false);
+    expect(documentUploadSchema.safeParse({}).success).toBe(false);
   });
 
   it('rejects a source owned by both a topic and a subject', () => {

@@ -7,6 +7,7 @@ process.env.GOOGLE_CLIENT_ID = '';
 
 const { default: app } = await import('./app.js');
 const { createToken } = await import('./utils/jwt.js');
+const { env } = await import('./config/env.js');
 
 let server;
 let base;
@@ -166,8 +167,70 @@ describe('app wiring', () => {
     expect(badMode.status).toBe(400);
   });
 
+  it('answers an unknown API path with 404, not a sign-in error', async () => {
+    const response = await fetch(`${base}/api/no-such-route`);
+    expect(response.status).toBe(404);
+  });
+
+  it('accepts pasted notes longer than the default 100 KB body limit', async () => {
+    const headers = { ...auth(), 'Content-Type': 'application/json' };
+    // No topic or subject, so validation answers before the database is touched.
+    const body = JSON.stringify({ name: 'Long notes', type: 'NOTE', text: 'word '.repeat(30000) });
+    const response = await fetch(`${base}/api/documents/text`, { method: 'POST', headers, body });
+    expect(response.status).toBe(400);
+    expect((await response.json()).message).toMatch(/topic or a subject/);
+  });
+
+  it('explains when pasted notes are over the character limit', async () => {
+    const headers = { ...auth(), 'Content-Type': 'application/json' };
+    const body = JSON.stringify({ topicId: 1, name: 'Too long', type: 'NOTE', text: 'x'.repeat(env.rag.maxDocumentChars + 1) });
+    const response = await fetch(`${base}/api/documents/text`, { method: 'POST', headers, body });
+    expect(response.status).toBe(400);
+    expect((await response.json()).message).toMatch(/too long/i);
+  });
+
+  it('keeps the small body limit on other routes', async () => {
+    const headers = { ...auth(), 'Content-Type': 'application/json' };
+    const body = JSON.stringify({ question: 'x'.repeat(200 * 1024) });
+    const response = await fetch(`${base}/api/ai-tutor/ask`, { method: 'POST', headers, body });
+    expect(response.status).toBe(413);
+    expect((await response.json()).message).toMatch(/too long/i);
+  });
+
   it('rejects a non-numeric document id', async () => {
     const response = await fetch(`${base}/api/documents/abc`, { method: 'DELETE', headers: auth() });
     expect(response.status).toBe(400);
+  });
+});
+
+// Each router with the path it is mounted at in app.js. Auth is scoped to each router's own paths,
+// so this guards against a route being added outside those paths and losing its sign-in check.
+const mountedRouters = {
+  '/api': ['subjectRoutes', 'topicRoutes', 'learningRoutes', 'topicHubRoutes', 'insightsRoutes'],
+  '/api/motivation': ['motivationRoutes'],
+  '/api/study-sessions': ['studySessionRoutes'],
+  '/api/resources': ['resourceRoutes'],
+  '/api/documents': ['documentRoutes'],
+  '/api/ai-tutor': ['tutorRoutes'],
+};
+const protectedRoutes = [];
+for (const [prefix, names] of Object.entries(mountedRouters)) {
+  for (const name of names) {
+    const { default: router } = await import(`./routes/${name}.js`);
+    for (const layer of router.stack.filter((item) => item.route)) {
+      for (const method of Object.keys(layer.route.methods)) {
+        protectedRoutes.push([method.toUpperCase(), `${prefix}${layer.route.path.replace(/:\w+/g, '1')}`]);
+      }
+    }
+  }
+}
+
+describe('every route outside sign-in requires authentication', () => {
+  it('finds the routes to check', () => {
+    expect(protectedRoutes.length).toBeGreaterThan(30);
+  });
+
+  it.each(protectedRoutes)('%s %s', async (method, path) => {
+    expect((await fetch(`${base}${path}`, { method })).status).toBe(401);
   });
 });

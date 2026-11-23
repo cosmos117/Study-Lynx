@@ -7,7 +7,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 
 const router = Router();
 
-router.use(authMiddleware);
+router.use('/subjects', authMiddleware);
 router.get('/subjects', asyncHandler(list));
 router.post('/subjects', validate(createSubjectSchema), asyncHandler(create));
 router.put(

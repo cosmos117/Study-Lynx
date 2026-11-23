@@ -11,6 +11,9 @@ export function errorMiddleware(error, _request, response, _next) {
   } else if (error.code === 'LIMIT_FILE_SIZE') {
     response.status(413).json({ success: false, message: 'File exceeds the allowed size limit' });
     return;
+  } else if (error.type === 'entity.too.large') {
+    response.status(413).json({ success: false, message: 'This is too long to send. Split it into smaller parts.' });
+    return;
   } else if (error.code === 'LIMIT_UNEXPECTED_FILE') {
     response.status(400).json({ success: false, message: 'Unexpected file field' });
     return;

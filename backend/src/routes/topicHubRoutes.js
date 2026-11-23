@@ -7,7 +7,7 @@ import { topicAiParamsSchema } from '../schemas/aiSchemas.js';
 import { studyNowSchema } from '../schemas/studySessionSchemas.js';
 
 const router = Router();
-router.use(authMiddleware);
+router.use('/topics', authMiddleware);
 router.get('/topics/:topicId/hub', validate(topicAiParamsSchema, 'params'), asyncHandler(getHub));
 router.post('/topics/:topicId/study-now', validate(topicAiParamsSchema, 'params'), validate(studyNowSchema), asyncHandler(startStudying));
 export default router;

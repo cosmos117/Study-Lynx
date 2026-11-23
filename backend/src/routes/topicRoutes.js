@@ -8,7 +8,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 // Topics are listed with their subject (GET /subjects) and opened through the topic hub.
 const router = Router();
 
-router.use(authMiddleware);
+router.use(['/subjects', '/topics'], authMiddleware);
 router.post(
   '/subjects/:subjectId/topics',
   validate(subjectIdSchema, 'params'),
